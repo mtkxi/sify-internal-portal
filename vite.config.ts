@@ -5,6 +5,7 @@
   import path from 'path';
 
   export default defineConfig({
+    base: '/sify-internal-portal/',
     plugins: [react(), tailwindcss()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
