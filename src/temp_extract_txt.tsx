@@ -1,0 +1,1 @@
+Search for the navigation buttons pattern in Step 4 or 5 files

@@ -1,0 +1,984 @@
+/* =============================================================================
+   REPLACEMENT FOR LINES 6966-10045 IN /components/NewDIAServiceRequest.tsx
+   
+   DELETE FROM LINE 6966: {/* Port Details - Always show for each connection */}
+   THROUGH LINE 10045: </div>
+   
+   THEN INSERT THE CODE BELOW AT THAT POSITION
+   ============================================================================= */
+
+                      {/* Link Configuration - Each link has its own Port + Bandwidth + LM */}
+                      {currentConnection.numberOfLinks === 'Single' ? (
+                        /* ===== SINGLE LINK ===== */
+                        <div className="space-y-6">
+                          
+                          {/* Port Details */}
+                          <div>
+                            <h4 className="text-sm text-gray-900 mb-3">Port Details</h4>
+                            {requirementInfo.product === 'DIA' ? (
+                              <div>
+                                <div className="flex items-start gap-6 flex-wrap">
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-classification-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.linkType || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, linkType: val})}
+                                    >
+                                      <SelectTrigger id={`port-classification-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Primary">Primary</SelectItem>
+                                        <SelectItem value="Secondary">Secondary</SelectItem>
+                                        <SelectItem value="Tertiary">Tertiary</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`handoff-type-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.portType || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, portType: val})}
+                                    >
+                                      <SelectTrigger id={`handoff-type-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Electrical Ethernet">Electrical Ethernet</SelectItem>
+                                        <SelectItem value="Optical Ethernet - Single mode">Optical Ethernet - Single mode</SelectItem>
+                                        <SelectItem value="Optical Ethernet - Multi mode">Optical Ethernet - Multi mode</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-bandwidth-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Bandwidth {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.portBandwidth || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, portBandwidth: val})}
+                                    >
+                                      <SelectTrigger id={`port-bandwidth-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="100 Mbps">100 Mbps</SelectItem>
+                                        <SelectItem value="1 Gbps">1 Gbps</SelectItem>
+                                        <SelectItem value="10 Gbps">10 Gbps</SelectItem>
+                                        <SelectItem value="40 Gbps">40 Gbps</SelectItem>
+                                        <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`bandwidth-type-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Bandwidth Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.bandwidthType || ''} 
+                                      onValueChange={(value: 'fixed' | 'burstable') => {
+                                        setCurrentConnection({
+                                          ...currentConnection, 
+                                          bandwidthType: value,
+                                          burstOption: value === 'fixed' ? '' : currentConnection.burstOption
+                                        });
+                                      }}
+                                    >
+                                      <SelectTrigger id={`bandwidth-type-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="fixed">Fixed</SelectItem>
+                                        <SelectItem value="burstable">Burstable</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  {currentConnection.bandwidthType === 'burstable' && (
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`burst-option-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Burst Option {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.burstOption || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, burstOption: val})}
+                                      >
+                                        <SelectTrigger id={`burst-option-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select burst" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="burst-2x">Burst 2x</SelectItem>
+                                          <SelectItem value="burst-4x">Burst 4x</SelectItem>
+                                          <SelectItem value="burst-5x">Burst 5x</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-type-size-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.portTypeSize || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, portTypeSize: val})}
+                                    >
+                                      <SelectTrigger id={`port-type-size-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="1G">1G</SelectItem>
+                                        <SelectItem value="10G">10G</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-8 mt-6">
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`sify-dns-cache-${selectedConnectionIndex}`}
+                                      checked={currentConnection.sifyDnsCache || false}
+                                      onCheckedChange={(checked) => setCurrentConnection({...currentConnection, sifyDnsCache: checked as boolean})}
+                                    />
+                                    <Label
+                                      htmlFor={`sify-dns-cache-${selectedConnectionIndex}`}
+                                      className="text-sm text-gray-900 cursor-pointer"
+                                    >
+                                      Sify DNS cache services
+                                    </Label>
+                                  </div>
+
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id={`port-redundancy-${selectedConnectionIndex}`}
+                                      checked={currentConnection.portRedundancy || false}
+                                      onCheckedChange={(checked) => setCurrentConnection({...currentConnection, portRedundancy: checked as boolean})}
+                                    />
+                                    <Label
+                                      htmlFor={`port-redundancy-${selectedConnectionIndex}`}
+                                      className="text-sm text-gray-900 cursor-pointer"
+                                    >
+                                      Port redundancy required
+                                    </Label>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="flex items-start gap-6 flex-wrap">
+                                <div className="max-w-xs">
+                                  <Label htmlFor={`port-classification-mpls-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                    Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                  </Label>
+                                  <Select 
+                                    value={currentConnection.linkType || ''} 
+                                    onValueChange={(val) => setCurrentConnection({...currentConnection, linkType: val})}
+                                  >
+                                    <SelectTrigger id={`port-classification-mpls-${selectedConnectionIndex}`}>
+                                      <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Primary">Primary</SelectItem>
+                                      <SelectItem value="Secondary">Secondary</SelectItem>
+                                      <SelectItem value="Tertiary">Tertiary</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="max-w-xs">
+                                  <Label htmlFor={`handoff-type-mpls-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                    Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                  </Label>
+                                  <Select 
+                                    value={currentConnection.portType || ''} 
+                                    onValueChange={(val) => setCurrentConnection({...currentConnection, portType: val})}
+                                  >
+                                    <SelectTrigger id={`handoff-type-mpls-${selectedConnectionIndex}`}>
+                                      <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Electrical Ethernet">Electrical Ethernet</SelectItem>
+                                      <SelectItem value="Optical Ethernet - Single mode">Optical Ethernet - Single mode</SelectItem>
+                                      <SelectItem value="Optical Ethernet - Multi mode">Optical Ethernet - Multi mode</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="max-w-xs">
+                                  <Label htmlFor={`port-bandwidth-mpls-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                    Port Bandwidth {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                  </Label>
+                                  <Select 
+                                    value={currentConnection.portBandwidth || ''} 
+                                    onValueChange={(val) => setCurrentConnection({...currentConnection, portBandwidth: val})}
+                                  >
+                                    <SelectTrigger id={`port-bandwidth-mpls-${selectedConnectionIndex}`}>
+                                      <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="100 Mbps">100 Mbps</SelectItem>
+                                      <SelectItem value="1 Gbps">1 Gbps</SelectItem>
+                                      <SelectItem value="10 Gbps">10 Gbps</SelectItem>
+                                      <SelectItem value="40 Gbps">40 Gbps</SelectItem>
+                                      <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+
+                                <div className="max-w-xs">
+                                  <Label htmlFor={`port-type-size-mpls-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                    Port Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                  </Label>
+                                  <Select 
+                                    value={currentConnection.portTypeSize || ''} 
+                                    onValueChange={(val) => setCurrentConnection({...currentConnection, portTypeSize: val})}
+                                  >
+                                    <SelectTrigger id={`port-type-size-mpls-${selectedConnectionIndex}`}>
+                                      <SelectValue placeholder="Select" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="1G">1G</SelectItem>
+                                      <SelectItem value="10G">10G</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          <Separator />
+
+                          {/* Bandwidth for Single Link */}
+                          <div>
+                            <h4 className="text-sm text-gray-900 mb-3">Bandwidth</h4>
+                            <div className="max-w-xs">
+                              <Label>Bandwidth *</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Enter value"
+                                  value={(() => {
+                                    const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                    return match ? match[1] : '';
+                                  })()}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^\d.]/g, '');
+                                    const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                    setCurrentConnection({
+                                      ...currentConnection, 
+                                      bandwidthValue: value ? `${value} ${unit}` : ''
+                                    });
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Select 
+                                  value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
+                                  onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                    const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                    const numericValue = match ? match[1] : '';
+                                    setCurrentConnection({
+                                      ...currentConnection, 
+                                      bandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="w-28">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Mbps">Mbps</SelectItem>
+                                    <SelectItem value="Gbps">Gbps</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Last Mile Type for Single Link */}
+                          <div>
+                            <LMTypeSelector
+                              addressType={currentConnection.addressType}
+                              buildingType={(() => {
+                                if (currentConnection.addressType === 'Sify DC' || 
+                                    currentConnection.addressType === 'Connected DC' || 
+                                    currentConnection.addressType === 'Connected Building') {
+                                  return currentConnection.addressType === 'Connected Building' ? 'Connected Building' : 'Data Center';
+                                }
+                                return currentConnection.isDataCenter ? 'Data Center' : 'Custom Location';
+                              })()}
+                              productRestrictions={requirementInfo.product === 'DIA' ? ['BSO - Fiber', 'BSO - Wireless'] : []}
+                              selectedTypes={currentConnection.connectionTypes || []}
+                              onChange={(types: ConnectionTypeItem[]) => {
+                                setCurrentConnection({
+                                  ...currentConnection,
+                                  connectionTypes: types
+                                });
+                              }}
+                              linkLabel="Single Link"
+                            />
+                          </div>
+
+                        </div>
+                      ) : currentConnection.numberOfLinks === 'Dual' ? (
+                        /* ===== DUAL LINK ===== */
+                        <div className="space-y-8">
+                          
+                          {/* ========== PRIMARY LINK ========== */}
+                          <div className="border-2 border-blue-300 rounded-lg p-6 bg-blue-50/30">
+                            <div className="flex items-center gap-2 mb-6">
+                              <div className="bg-blue-600 text-white px-3 py-1.5 rounded-md font-semibold text-sm">
+                                Primary Link
+                              </div>
+                            </div>
+                            
+                            {/* Port Details for Primary Link */}
+                            <div className="mb-6">
+                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Port Details</h4>
+                              {requirementInfo.product === 'DIA' ? (
+                                <div>
+                                  <div className="flex items-start gap-6 flex-wrap">
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`port-classification-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.linkType || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, linkType: val})}
+                                      >
+                                        <SelectTrigger id={`port-classification-primary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Primary">Primary</SelectItem>
+                                          <SelectItem value="Secondary">Secondary</SelectItem>
+                                          <SelectItem value="Tertiary">Tertiary</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`handoff-type-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.portType || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, portType: val})}
+                                      >
+                                        <SelectTrigger id={`handoff-type-primary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Electrical Ethernet">Electrical Ethernet</SelectItem>
+                                          <SelectItem value="Optical Ethernet - Single mode">Optical Ethernet - Single mode</SelectItem>
+                                          <SelectItem value="Optical Ethernet - Multi mode">Optical Ethernet - Multi mode</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`port-bandwidth-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Port Bandwidth {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.portBandwidth || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, portBandwidth: val})}
+                                      >
+                                        <SelectTrigger id={`port-bandwidth-primary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="100 Mbps">100 Mbps</SelectItem>
+                                          <SelectItem value="1 Gbps">1 Gbps</SelectItem>
+                                          <SelectItem value="10 Gbps">10 Gbps</SelectItem>
+                                          <SelectItem value="40 Gbps">40 Gbps</SelectItem>
+                                          <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`bandwidth-type-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Bandwidth Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.bandwidthType || ''} 
+                                        onValueChange={(value: 'fixed' | 'burstable') => {
+                                          setCurrentConnection({
+                                            ...currentConnection, 
+                                            bandwidthType: value,
+                                            burstOption: value === 'fixed' ? '' : currentConnection.burstOption
+                                          });
+                                        }}
+                                      >
+                                        <SelectTrigger id={`bandwidth-type-primary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="fixed">Fixed</SelectItem>
+                                          <SelectItem value="burstable">Burstable</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    {currentConnection.bandwidthType === 'burstable' && (
+                                      <div className="max-w-xs">
+                                        <Label htmlFor={`burst-option-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                          Burst Option {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                        </Label>
+                                        <Select 
+                                          value={currentConnection.burstOption || ''} 
+                                          onValueChange={(val) => setCurrentConnection({...currentConnection, burstOption: val})}
+                                        >
+                                          <SelectTrigger id={`burst-option-primary-${selectedConnectionIndex}`}>
+                                            <SelectValue placeholder="Select burst" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="burst-2x">Burst 2x</SelectItem>
+                                            <SelectItem value="burst-4x">Burst 4x</SelectItem>
+                                            <SelectItem value="burst-5x">Burst 5x</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`port-type-size-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Port Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.portTypeSize || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, portTypeSize: val})}
+                                      >
+                                        <SelectTrigger id={`port-type-size-primary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="1G">1G</SelectItem>
+                                          <SelectItem value="10G">10G</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-8 mt-6">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`sify-dns-cache-primary-${selectedConnectionIndex}`}
+                                        checked={currentConnection.sifyDnsCache || false}
+                                        onCheckedChange={(checked) => setCurrentConnection({...currentConnection, sifyDnsCache: checked as boolean})}
+                                      />
+                                      <Label
+                                        htmlFor={`sify-dns-cache-primary-${selectedConnectionIndex}`}
+                                        className="text-sm text-gray-900 cursor-pointer"
+                                      >
+                                        Sify DNS cache services
+                                      </Label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`port-redundancy-primary-${selectedConnectionIndex}`}
+                                        checked={currentConnection.portRedundancy || false}
+                                        onCheckedChange={(checked) => setCurrentConnection({...currentConnection, portRedundancy: checked as boolean})}
+                                      />
+                                      <Label
+                                        htmlFor={`port-redundancy-primary-${selectedConnectionIndex}`}
+                                        className="text-sm text-gray-900 cursor-pointer"
+                                      >
+                                        Port redundancy required
+                                      </Label>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-start gap-6 flex-wrap">
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-classification-mpls-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.linkType || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, linkType: val})}
+                                    >
+                                      <SelectTrigger id={`port-classification-mpls-primary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Primary">Primary</SelectItem>
+                                        <SelectItem value="Secondary">Secondary</SelectItem>
+                                        <SelectItem value="Tertiary">Tertiary</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`handoff-type-mpls-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.portType || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, portType: val})}
+                                    >
+                                      <SelectTrigger id={`handoff-type-mpls-primary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Electrical Ethernet">Electrical Ethernet</SelectItem>
+                                        <SelectItem value="Optical Ethernet - Single mode">Optical Ethernet - Single mode</SelectItem>
+                                        <SelectItem value="Optical Ethernet - Multi mode">Optical Ethernet - Multi mode</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-bandwidth-mpls-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Bandwidth {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.portBandwidth || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, portBandwidth: val})}
+                                    >
+                                      <SelectTrigger id={`port-bandwidth-mpls-primary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="100 Mbps">100 Mbps</SelectItem>
+                                        <SelectItem value="1 Gbps">1 Gbps</SelectItem>
+                                        <SelectItem value="10 Gbps">10 Gbps</SelectItem>
+                                        <SelectItem value="40 Gbps">40 Gbps</SelectItem>
+                                        <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-type-size-mpls-primary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.portTypeSize || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, portTypeSize: val})}
+                                    >
+                                      <SelectTrigger id={`port-type-size-mpls-primary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="1G">1G</SelectItem>
+                                        <SelectItem value="10G">10G</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Bandwidth for Primary Link */}
+                            <div className="mb-6">
+                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Bandwidth</h4>
+                              <div className="max-w-xs">
+                                <Label>Bandwidth *</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Enter value"
+                                    value={(() => {
+                                      const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                      return match ? match[1] : '';
+                                    })()}
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/[^\d.]/g, '');
+                                      const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                      setCurrentConnection({
+                                        ...currentConnection, 
+                                        bandwidthValue: value ? `${value} ${unit}` : ''
+                                      });
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <Select 
+                                    value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
+                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                      const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                      const numericValue = match ? match[1] : '';
+                                      setCurrentConnection({
+                                        ...currentConnection, 
+                                        bandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Mbps">Mbps</SelectItem>
+                                      <SelectItem value="Gbps">Gbps</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Last Mile Type for Primary Link */}
+                            <div>
+                              <LMTypeSelector
+                                addressType={currentConnection.addressType}
+                                buildingType={(() => {
+                                  if (currentConnection.addressType === 'Sify DC' || 
+                                      currentConnection.addressType === 'Connected DC' || 
+                                      currentConnection.addressType === 'Connected Building') {
+                                    return currentConnection.addressType === 'Connected Building' ? 'Connected Building' : 'Data Center';
+                                  }
+                                  return currentConnection.isDataCenter ? 'Data Center' : 'Custom Location';
+                                })()}
+                                productRestrictions={requirementInfo.product === 'DIA' ? ['BSO - Fiber', 'BSO - Wireless'] : []}
+                                selectedTypes={currentConnection.connectionTypes || []}
+                                onChange={(types: ConnectionTypeItem[]) => {
+                                  setCurrentConnection({
+                                    ...currentConnection,
+                                    connectionTypes: types
+                                  });
+                                }}
+                                linkLabel="Primary Link"
+                              />
+                            </div>
+                          </div>
+
+                          {/* ========== SECONDARY LINK ========== */}
+                          <div className="border-2 border-gray-300 rounded-lg p-6 bg-gray-50/30">
+                            <div className="flex items-center gap-2 mb-6">
+                              <div className="bg-gray-600 text-white px-3 py-1.5 rounded-md font-semibold text-sm">
+                                Secondary Link
+                              </div>
+                            </div>
+                            
+                            {/* Port Details for Secondary Link */}
+                            <div className="mb-6">
+                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Port Details</h4>
+                              {requirementInfo.product === 'DIA' ? (
+                                <div>
+                                  <div className="flex items-start gap-6 flex-wrap">
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`port-classification-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.link2LinkType || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, link2LinkType: val})}
+                                      >
+                                        <SelectTrigger id={`port-classification-secondary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Primary">Primary</SelectItem>
+                                          <SelectItem value="Secondary">Secondary</SelectItem>
+                                          <SelectItem value="Tertiary">Tertiary</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`handoff-type-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.link2PortType || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, link2PortType: val})}
+                                      >
+                                        <SelectTrigger id={`handoff-type-secondary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="Electrical Ethernet">Electrical Ethernet</SelectItem>
+                                          <SelectItem value="Optical Ethernet - Single mode">Optical Ethernet - Single mode</SelectItem>
+                                          <SelectItem value="Optical Ethernet - Multi mode">Optical Ethernet - Multi mode</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`port-bandwidth-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Port Bandwidth {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.link2PortBandwidth || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, link2PortBandwidth: val})}
+                                      >
+                                        <SelectTrigger id={`port-bandwidth-secondary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="100 Mbps">100 Mbps</SelectItem>
+                                          <SelectItem value="1 Gbps">1 Gbps</SelectItem>
+                                          <SelectItem value="10 Gbps">10 Gbps</SelectItem>
+                                          <SelectItem value="40 Gbps">40 Gbps</SelectItem>
+                                          <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`bandwidth-type-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Bandwidth Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.link2BandwidthType || ''} 
+                                        onValueChange={(value: 'fixed' | 'burstable') => {
+                                          setCurrentConnection({
+                                            ...currentConnection, 
+                                            link2BandwidthType: value,
+                                            link2BurstOption: value === 'fixed' ? '' : currentConnection.link2BurstOption
+                                          });
+                                        }}
+                                      >
+                                        <SelectTrigger id={`bandwidth-type-secondary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="fixed">Fixed</SelectItem>
+                                          <SelectItem value="burstable">Burstable</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+
+                                    {currentConnection.link2BandwidthType === 'burstable' && (
+                                      <div className="max-w-xs">
+                                        <Label htmlFor={`burst-option-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                          Burst Option {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                        </Label>
+                                        <Select 
+                                          value={currentConnection.link2BurstOption || ''} 
+                                          onValueChange={(val) => setCurrentConnection({...currentConnection, link2BurstOption: val})}
+                                        >
+                                          <SelectTrigger id={`burst-option-secondary-${selectedConnectionIndex}`}>
+                                            <SelectValue placeholder="Select burst" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            <SelectItem value="burst-2x">Burst 2x</SelectItem>
+                                            <SelectItem value="burst-4x">Burst 4x</SelectItem>
+                                            <SelectItem value="burst-5x">Burst 5x</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                    )}
+
+                                    <div className="max-w-xs">
+                                      <Label htmlFor={`port-type-size-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                        Port Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                      </Label>
+                                      <Select 
+                                        value={currentConnection.link2PortTypeSize || ''} 
+                                        onValueChange={(val) => setCurrentConnection({...currentConnection, link2PortTypeSize: val})}
+                                      >
+                                        <SelectTrigger id={`port-type-size-secondary-${selectedConnectionIndex}`}>
+                                          <SelectValue placeholder="Select" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="1G">1G</SelectItem>
+                                          <SelectItem value="10G">10G</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex items-center gap-8 mt-6">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`sify-dns-cache-secondary-${selectedConnectionIndex}`}
+                                        checked={currentConnection.link2SifyDnsCache || false}
+                                        onCheckedChange={(checked) => setCurrentConnection({...currentConnection, link2SifyDnsCache: checked as boolean})}
+                                      />
+                                      <Label
+                                        htmlFor={`sify-dns-cache-secondary-${selectedConnectionIndex}`}
+                                        className="text-sm text-gray-900 cursor-pointer"
+                                      >
+                                        Sify DNS cache services
+                                      </Label>
+                                    </div>
+
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`port-redundancy-secondary-${selectedConnectionIndex}`}
+                                        checked={currentConnection.link2PortRedundancy || false}
+                                        onCheckedChange={(checked) => setCurrentConnection({...currentConnection, link2PortRedundancy: checked as boolean})}
+                                      />
+                                      <Label
+                                        htmlFor={`port-redundancy-secondary-${selectedConnectionIndex}`}
+                                        className="text-sm text-gray-900 cursor-pointer"
+                                      >
+                                        Port redundancy required
+                                      </Label>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-start gap-6 flex-wrap">
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-classification-mpls-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.link2LinkType || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, link2LinkType: val})}
+                                    >
+                                      <SelectTrigger id={`port-classification-mpls-secondary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Primary">Primary</SelectItem>
+                                        <SelectItem value="Secondary">Secondary</SelectItem>
+                                        <SelectItem value="Tertiary">Tertiary</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`handoff-type-mpls-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.link2PortType || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, link2PortType: val})}
+                                    >
+                                      <SelectTrigger id={`handoff-type-mpls-secondary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Electrical Ethernet">Electrical Ethernet</SelectItem>
+                                        <SelectItem value="Optical Ethernet - Single mode">Optical Ethernet - Single mode</SelectItem>
+                                        <SelectItem value="Optical Ethernet - Multi mode">Optical Ethernet - Multi mode</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-bandwidth-mpls-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Bandwidth {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.link2PortBandwidth || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, link2PortBandwidth: val})}
+                                    >
+                                      <SelectTrigger id={`port-bandwidth-mpls-secondary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="100 Mbps">100 Mbps</SelectItem>
+                                        <SelectItem value="1 Gbps">1 Gbps</SelectItem>
+                                        <SelectItem value="10 Gbps">10 Gbps</SelectItem>
+                                        <SelectItem value="40 Gbps">40 Gbps</SelectItem>
+                                        <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+
+                                  <div className="max-w-xs">
+                                    <Label htmlFor={`port-type-size-mpls-secondary-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
+                                      Port Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
+                                    </Label>
+                                    <Select 
+                                      value={currentConnection.link2PortTypeSize || ''} 
+                                      onValueChange={(val) => setCurrentConnection({...currentConnection, link2PortTypeSize: val})}
+                                    >
+                                      <SelectTrigger id={`port-type-size-mpls-secondary-${selectedConnectionIndex}`}>
+                                        <SelectValue placeholder="Select" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="1G">1G</SelectItem>
+                                        <SelectItem value="10G">10G</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Bandwidth for Secondary Link */}
+                            <div className="mb-6">
+                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Bandwidth</h4>
+                              <div className="max-w-xs">
+                                <Label>Bandwidth *</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Enter value"
+                                    value={(() => {
+                                      const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
+                                      return match ? match[1] : '';
+                                    })()}
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/[^\d.]/g, '');
+                                      const unit = currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                      setCurrentConnection({
+                                        ...currentConnection, 
+                                        link2BandwidthValue: value ? `${value} ${unit}` : ''
+                                      });
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <Select 
+                                    value={currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
+                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                      const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
+                                      const numericValue = match ? match[1] : '';
+                                      setCurrentConnection({
+                                        ...currentConnection, 
+                                        link2BandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Mbps">Mbps</SelectItem>
+                                      <SelectItem value="Gbps">Gbps</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Last Mile Type for Secondary Link */}
+                            <div>
+                              <LMTypeSelector
+                                addressType={currentConnection.addressType}
+                                buildingType={(() => {
+                                  if (currentConnection.addressType === 'Sify DC' || 
+                                      currentConnection.addressType === 'Connected DC' || 
+                                      currentConnection.addressType === 'Connected Building') {
+                                    return currentConnection.addressType === 'Connected Building' ? 'Connected Building' : 'Data Center';
+                                  }
+                                  return currentConnection.isDataCenter ? 'Data Center' : 'Custom Location';
+                                })()}
+                                productRestrictions={requirementInfo.product === 'DIA' ? ['BSO - Fiber', 'BSO - Wireless'] : []}
+                                selectedTypes={currentConnection.link2ConnectionTypes || []}
+                                onChange={(types: ConnectionTypeItem[]) => {
+                                  setCurrentConnection({
+                                    ...currentConnection,
+                                    link2ConnectionTypes: types
+                                  });
+                                }}
+                                linkLabel="Secondary Link"
+                              />
+                            </div>
+                          </div>
+
+                        </div>
+                      ) : null}

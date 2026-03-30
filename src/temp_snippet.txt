@@ -1,0 +1,27 @@
+const handleGenerateProposal = () => {
+    const unconfigured = fidConfigurations.filter(f => !f.isConfigured);
+    
+    if (unconfigured.length > 0) {
+      toast.error(`Please configure all FIDs. ${unconfigured.length} FID(s) pending configuration.`);
+      return;
+    }
+
+    if (!hasPrimaryLink) {
+      toast.error('At least one FID must have \"Primary\" link type selected.');
+      return;
+    }
+
+    toast.success('Proceeding to proposal generation...');
+    
+    // Navigate to proposal document generation page
+    navigate('/proposal-document-generation', {
+      state: {
+        proposalId: basicDetails.proposalId,
+        company: basicDetails.companyName,
+        networkProduct: basicDetails.product,
+        opportunityId,
+        pricingData: fidConfigurations,
+        totals: totalPricing
+      }
+    });
+  };
