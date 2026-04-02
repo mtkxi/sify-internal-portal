@@ -7272,6 +7272,81 @@ export function NewDIAServiceRequest() {
                             </Select>
                           </div>
 
+                          <Separator />
+
+                          {/* Bandwidth for Single Link */}
+                          <div>
+                            <h4 className="text-sm text-gray-900 mb-3">Bandwidth</h4>
+                            <div className="max-w-xs">
+                              <Label>Bandwidth *</Label>
+                              <div className="flex gap-2">
+                                <Input
+                                  type="text"
+                                  placeholder="Enter value"
+                                  value={(() => {
+                                    const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                    return match ? match[1] : '';
+                                  })()}
+                                  onChange={(e) => {
+                                    const value = e.target.value.replace(/[^\d.]/g, '');
+                                    const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                    setCurrentConnection({
+                                      ...currentConnection,
+                                      bandwidthValue: value ? `${value} ${unit}` : ''
+                                    });
+                                  }}
+                                  className="flex-1"
+                                />
+                                <Select
+                                  value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
+                                  onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                    const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                    const numericValue = match ? match[1] : '';
+                                    setCurrentConnection({
+                                      ...currentConnection,
+                                      bandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
+                                    });
+                                  }}
+                                >
+                                  <SelectTrigger className="w-28">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Mbps">Mbps</SelectItem>
+                                    <SelectItem value="Gbps">Gbps</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          {/* Last Mile Type for Single Link */}
+                          <div>
+                            <LMTypeSelector
+                              connectionTypes={currentConnection.connectionTypes || []}
+                              onConnectionTypesChange={(types: ConnectionTypeItem[]) => {
+                                setCurrentConnection({
+                                  ...currentConnection,
+                                  connectionTypes: types
+                                });
+                              }}
+                              idPrefix="single-link"
+                              buildingType={currentConnection.addressType}
+                              linkType={currentConnection.numberOfLinks || 'Single'}
+                              cloudProvider={currentConnection.cloudProvider}
+                              dcLocation={
+                                currentConnection.addressType === 'Sify DC' ||
+                                currentConnection.addressType === 'Connected DC'
+                              }
+                            />
+                          </div>
+
+
+
+                          <Separator />
+
                           {/* Port Details */}
                           <div>
                             <h4 className="text-sm text-gray-900 mb-3">Port Details</h4>
@@ -7511,77 +7586,6 @@ export function NewDIAServiceRequest() {
                             )}
                           </div>
 
-                          <Separator />
-
-                          {/* Bandwidth for Single Link */}
-                          <div>
-                            <h4 className="text-sm text-gray-900 mb-3">Bandwidth</h4>
-                            <div className="max-w-xs">
-                              <Label>Bandwidth *</Label>
-                              <div className="flex gap-2">
-                                <Input
-                                  type="text"
-                                  placeholder="Enter value"
-                                  value={(() => {
-                                    const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
-                                    return match ? match[1] : '';
-                                  })()}
-                                  onChange={(e) => {
-                                    const value = e.target.value.replace(/[^\d.]/g, '');
-                                    const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
-                                    setCurrentConnection({
-                                      ...currentConnection,
-                                      bandwidthValue: value ? `${value} ${unit}` : ''
-                                    });
-                                  }}
-                                  className="flex-1"
-                                />
-                                <Select
-                                  value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
-                                  onValueChange={(unit: 'Mbps' | 'Gbps') => {
-                                    const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
-                                    const numericValue = match ? match[1] : '';
-                                    setCurrentConnection({
-                                      ...currentConnection,
-                                      bandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
-                                    });
-                                  }}
-                                >
-                                  <SelectTrigger className="w-28">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Mbps">Mbps</SelectItem>
-                                    <SelectItem value="Gbps">Gbps</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-                          </div>
-
-                          <Separator />
-
-                          {/* Last Mile Type for Single Link */}
-                          <div>
-                            <LMTypeSelector
-                              connectionTypes={currentConnection.connectionTypes || []}
-                              onConnectionTypesChange={(types: ConnectionTypeItem[]) => {
-                                setCurrentConnection({
-                                  ...currentConnection,
-                                  connectionTypes: types
-                                });
-                              }}
-                              idPrefix="single-link"
-                              buildingType={currentConnection.addressType}
-                              linkType={currentConnection.numberOfLinks || 'Single'}
-                              cloudProvider={currentConnection.cloudProvider}
-                              dcLocation={
-                                currentConnection.addressType === 'Sify DC' ||
-                                currentConnection.addressType === 'Connected DC'
-                              }
-                            />
-                          </div>
-
                         </div>
                       ) : (currentConnection.numberOfLinks === 'Dual link with single cloud' || currentConnection.numberOfLinks === 'Dual link with dual cloud') ? (
                         /* ===== DUAL LINK ===== */
@@ -7619,6 +7623,77 @@ export function NewDIAServiceRequest() {
                                 </Select>
                               </div>
                             )}
+
+                            {/* Bandwidth for Primary Link */}
+                            <div className="mb-6">
+                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Bandwidth</h4>
+                              <div className="max-w-xs">
+                                <Label>Bandwidth *</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Enter value"
+                                    value={(() => {
+                                      const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                      return match ? match[1] : '';
+                                    })()}
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/[^\d.]/g, '');
+                                      const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                      setCurrentConnection({
+                                        ...currentConnection,
+                                        bandwidthValue: value ? `${value} ${unit}` : ''
+                                      });
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <Select
+                                    value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
+                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                      const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
+                                      const numericValue = match ? match[1] : '';
+                                      setCurrentConnection({
+                                        ...currentConnection,
+                                        bandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Mbps">Mbps</SelectItem>
+                                      <SelectItem value="Gbps">Gbps</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Last Mile Type for Primary Link */}
+                            <div className="mb-6">
+                              <LMTypeSelector
+                                connectionTypes={currentConnection.connectionTypes || []}
+                                onConnectionTypesChange={(types: ConnectionTypeItem[]) => {
+                                  setCurrentConnection({
+                                    ...currentConnection,
+                                    connectionTypes: types
+                                  });
+                                }}
+                                idPrefix="primary-link"
+                                buildingType={currentConnection.addressType}
+                                linkType={currentConnection.numberOfLinks || 'Single'}
+                                cloudProvider={currentConnection.cloudProvider}
+                                dcLocation={
+                                  currentConnection.addressType === 'Sify DC' ||
+                                  currentConnection.addressType === 'Connected DC'
+                                }
+                              />
+                            </div>
+
+                            <Separator className="my-6" />
 
                             {/* Primary 1 Cross Connect Responsibility */}
                             {requirementInfo.orderType === 'New' && currentConnection.addressType &&
@@ -7671,6 +7746,8 @@ export function NewDIAServiceRequest() {
                                   )}
                                 </div>
                               )}
+
+                            <Separator className="my-6" />
 
                             {/* Port Details for Primary Link */}
                             <div className="mb-6">
@@ -7874,77 +7951,6 @@ export function NewDIAServiceRequest() {
                                 </div>
                               )}
                             </div>
-
-                            <Separator className="my-6" />
-
-                            {/* Bandwidth for Primary Link */}
-                            <div className="mb-6">
-                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Bandwidth</h4>
-                              <div className="max-w-xs">
-                                <Label>Bandwidth *</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    type="text"
-                                    placeholder="Enter value"
-                                    value={(() => {
-                                      const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
-                                      return match ? match[1] : '';
-                                    })()}
-                                    onChange={(e) => {
-                                      const value = e.target.value.replace(/[^\d.]/g, '');
-                                      const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
-                                      setCurrentConnection({
-                                        ...currentConnection,
-                                        bandwidthValue: value ? `${value} ${unit}` : ''
-                                      });
-                                    }}
-                                    className="flex-1"
-                                  />
-                                  <Select
-                                    value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
-                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
-                                      const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
-                                      const numericValue = match ? match[1] : '';
-                                      setCurrentConnection({
-                                        ...currentConnection,
-                                        bandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="w-28">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Mbps">Mbps</SelectItem>
-                                      <SelectItem value="Gbps">Gbps</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            </div>
-
-                            <Separator className="my-6" />
-
-                            {/* Last Mile Type for Primary Link */}
-                            <div>
-                              <LMTypeSelector
-                                connectionTypes={currentConnection.connectionTypes || []}
-                                onConnectionTypesChange={(types: ConnectionTypeItem[]) => {
-                                  setCurrentConnection({
-                                    ...currentConnection,
-                                    connectionTypes: types
-                                  });
-                                }}
-                                idPrefix="primary-link"
-                                buildingType={currentConnection.addressType}
-                                linkType={currentConnection.numberOfLinks || 'Single'}
-                                cloudProvider={currentConnection.cloudProvider}
-                                dcLocation={
-                                  currentConnection.addressType === 'Sify DC' ||
-                                  currentConnection.addressType === 'Connected DC'
-                                }
-                              />
-                            </div>
                           </div>
 
                           {/* ========== SECONDARY LINK ========== */}
@@ -7979,6 +7985,77 @@ export function NewDIAServiceRequest() {
                                 </Select>
                               </div>
                             )}
+
+                            {/* Bandwidth for Secondary Link */}
+                            <div className="mb-6">
+                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Bandwidth</h4>
+                              <div className="max-w-xs">
+                                <Label>Bandwidth *</Label>
+                                <div className="flex gap-2">
+                                  <Input
+                                    type="text"
+                                    placeholder="Enter value"
+                                    value={(() => {
+                                      const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
+                                      return match ? match[1] : '';
+                                    })()}
+                                    onChange={(e) => {
+                                      const value = e.target.value.replace(/[^\d.]/g, '');
+                                      const unit = currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                      setCurrentConnection({
+                                        ...currentConnection,
+                                        link2BandwidthValue: value ? `${value} ${unit}` : ''
+                                      });
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <Select
+                                    value={currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
+                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                      const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
+                                      const numericValue = match ? match[1] : '';
+                                      setCurrentConnection({
+                                        ...currentConnection,
+                                        link2BandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-28">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Mbps">Mbps</SelectItem>
+                                      <SelectItem value="Gbps">Gbps</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
+
+                            <Separator className="my-6" />
+
+                            {/* Last Mile Type for Secondary Link */}
+                            <div className="mb-6">
+                              <LMTypeSelector
+                                connectionTypes={currentConnection.link2ConnectionTypes || []}
+                                onConnectionTypesChange={(types: ConnectionTypeItem[]) => {
+                                  setCurrentConnection({
+                                    ...currentConnection,
+                                    link2ConnectionTypes: types
+                                  });
+                                }}
+                                idPrefix="secondary-link"
+                                buildingType={currentConnection.addressType}
+                                linkType={currentConnection.numberOfLinks || 'Single'}
+                                cloudProvider={currentConnection.link2CloudProvider}
+                                dcLocation={
+                                  currentConnection.addressType === 'Sify DC' ||
+                                  currentConnection.addressType === 'Connected DC'
+                                }
+                              />
+                            </div>
+
+                            <Separator className="my-6" />
 
                             {/* Secondary 2 Cross Connect Responsibility */}
                             {requirementInfo.orderType === 'New' && currentConnection.addressType &&
@@ -8031,6 +8108,8 @@ export function NewDIAServiceRequest() {
                                   )}
                                 </div>
                               )}
+
+                            <Separator className="my-6" />
 
                             {/* Port Details for Secondary Link */}
                             <div className="mb-6">
@@ -8229,77 +8308,6 @@ export function NewDIAServiceRequest() {
                                   </div>
                                 </div>
                               )}
-                            </div>
-
-                            <Separator className="my-6" />
-
-                            {/* Bandwidth for Secondary Link */}
-                            <div className="mb-6">
-                              <h4 className="text-sm text-gray-900 mb-3 font-medium">Bandwidth</h4>
-                              <div className="max-w-xs">
-                                <Label>Bandwidth *</Label>
-                                <div className="flex gap-2">
-                                  <Input
-                                    type="text"
-                                    placeholder="Enter value"
-                                    value={(() => {
-                                      const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
-                                      return match ? match[1] : '';
-                                    })()}
-                                    onChange={(e) => {
-                                      const value = e.target.value.replace(/[^\d.]/g, '');
-                                      const unit = currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
-                                      setCurrentConnection({
-                                        ...currentConnection,
-                                        link2BandwidthValue: value ? `${value} ${unit}` : ''
-                                      });
-                                    }}
-                                    className="flex-1"
-                                  />
-                                  <Select
-                                    value={currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
-                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
-                                      const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
-                                      const numericValue = match ? match[1] : '';
-                                      setCurrentConnection({
-                                        ...currentConnection,
-                                        link2BandwidthValue: numericValue ? `${numericValue} ${unit}` : ''
-                                      });
-                                    }}
-                                  >
-                                    <SelectTrigger className="w-28">
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Mbps">Mbps</SelectItem>
-                                      <SelectItem value="Gbps">Gbps</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            </div>
-
-                            <Separator className="my-6" />
-
-                            {/* Last Mile Type for Secondary Link */}
-                            <div>
-                              <LMTypeSelector
-                                connectionTypes={currentConnection.link2ConnectionTypes || []}
-                                onConnectionTypesChange={(types: ConnectionTypeItem[]) => {
-                                  setCurrentConnection({
-                                    ...currentConnection,
-                                    link2ConnectionTypes: types
-                                  });
-                                }}
-                                idPrefix="secondary-link"
-                                buildingType={currentConnection.addressType}
-                                linkType={currentConnection.numberOfLinks || 'Single'}
-                                cloudProvider={currentConnection.link2CloudProvider}
-                                dcLocation={
-                                  currentConnection.addressType === 'Sify DC' ||
-                                  currentConnection.addressType === 'Connected DC'
-                                }
-                              />
                             </div>
                           </div>
 
