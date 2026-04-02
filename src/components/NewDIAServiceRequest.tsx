@@ -94,8 +94,8 @@ interface Connection {
   longitude?: string;
   crossConnectResponsibility?: 'Sify' | 'Customer'; // Cross Connect Responsibility
   crossConnectType?: 'Copper' | 'Fiber'; // Cross Connect Type (shown when Sify is selected)
-  link2CrossConnectResponsibility?: 'Sify' | 'Customer'; // Link 2 cross connect
-  link2CrossConnectType?: 'Copper' | 'Fiber'; // Link 2 cross connect type
+  link2CrossConnectResponsibility?: 'Sify' | 'Customer'; // Secondary 2 cross connect
+  link2CrossConnectType?: 'Copper' | 'Fiber'; // Secondary 2 cross connect type
   bandwidthValue: string;
   connectionTypes: ConnectionTypeItem[];
   vas: VASItem[];
@@ -112,7 +112,7 @@ interface Connection {
   cloudServiceType?: string;
   connectingNodes?: string;
   transportType?: string;
-  // Port Details - Link 1
+  // Port Details - Primary 1
   linkType?: string;
   portType?: string;
   portBandwidth?: string;
@@ -124,7 +124,7 @@ interface Connection {
   portRedundancy?: boolean;
   // MPLS-specific port details
   ipType?: string;
-  // Port Details - Link 2 (for Dual links)
+  // Port Details - Secondary 2 (for Dual links)
   link2LinkType?: string;
   link2PortType?: string;
   link2PortBandwidth?: string;
@@ -134,8 +134,8 @@ interface Connection {
   link2SifyDnsCache?: boolean;
   link2PortRedundancy?: boolean;
   link2IpType?: string;
-  link2BandwidthValue?: string; // Bandwidth for Link 2
-  link2ConnectionTypes?: ConnectionTypeItem[]; // Connection types for Link 2
+  link2BandwidthValue?: string; // Bandwidth for Seconadry 2
+  link2ConnectionTypes?: ConnectionTypeItem[]; // Connection types for Seconadry 2
   // Remarks
   remarks?: string; // Notes or description for the feasibility
   // MDAC fields
@@ -1019,6 +1019,32 @@ export function NewDIAServiceRequest() {
     }
   }, [currentConnection.addressLine1, currentConnection.addressType]);
 
+  // Helper function to filter port bandwidth options based on bandwidth value
+  const getFilteredPortBandwidthOptions = (bandwidthValue: string): { value: string; label: string }[] => {
+    const portOptions = [
+      { value: "100 Mbps", label: "100 Mbps", numericValue: 100 },
+      { value: "1 Gbps", label: "1 Gbps", numericValue: 1000 },
+      { value: "10 Gbps", label: "10 Gbps", numericValue: 10000 },
+      { value: "40 Gbps", label: "40 Gbps", numericValue: 40000 },
+      { value: "100 Gbps", label: "100 Gbps", numericValue: 100000 }
+    ];
+
+    if (!bandwidthValue) return portOptions;
+
+    // Extract numeric value from bandwidth
+    const bandwidthMatch = bandwidthValue.match(/(\d+(?:\.\d+)?)\s*(Mbps|Gbps)/i);
+    if (!bandwidthMatch) return portOptions;
+
+    const value = parseFloat(bandwidthMatch[1]);
+    const unit = bandwidthMatch[2].toLowerCase();
+    
+    // Convert to Mbps for consistent comparison
+    const bandwidthInMbps = unit === 'gbps' ? value * 1000 : value;
+
+    // Return only options that are lower than the bandwidth value
+    return portOptions.filter(option => option.numericValue < bandwidthInMbps);
+  };
+
   const handleLoadSampleData = () => {
     console.log('🚀 Loading sample data. requirementInfo.orderType:', requirementInfo.orderType);
 
@@ -1552,26 +1578,26 @@ export function NewDIAServiceRequest() {
       cloudServiceType: currentConnection.cloudServiceType || '',
       connectingNodes: currentConnection.connectingNodes || '',
       transportType: currentConnection.transportType || '',
-      // Port Details - Link 1 (DIA-specific)
+      // Port Details - Primary 1 (DIA-specific)
       portTypeSize: currentConnection.portTypeSize || '',
       bandwidthType: currentConnection.bandwidthType,
       burstOption: currentConnection.burstOption || '',
       sifyDnsCache: currentConnection.sifyDnsCache || false,
       portRedundancy: currentConnection.portRedundancy || false,
-      // Port Details - Link 1 (MPLS/P2P-specific)
+      // Port Details - Primary 1 (MPLS/P2P-specific)
       ipType: currentConnection.ipType || '',
-      // Port Details - Link 2 (DIA-specific)
+      // Port Details - Secondary 2 (DIA-specific)
       link2PortTypeSize: currentConnection.link2PortTypeSize || '',
       link2BandwidthType: currentConnection.link2BandwidthType,
       link2BurstOption: currentConnection.link2BurstOption || '',
       link2SifyDnsCache: currentConnection.link2SifyDnsCache || false,
       link2PortRedundancy: currentConnection.link2PortRedundancy || false,
-      // Port Details - Link 2 (MPLS/P2P-specific)
+      // Port Details - Secondary 2 (MPLS/P2P-specific)
       link2LinkType: currentConnection.link2LinkType || '',
       link2PortType: currentConnection.link2PortType || '',
       link2PortBandwidth: currentConnection.link2PortBandwidth || '',
       link2IpType: currentConnection.link2IpType || '',
-      // Bandwidth and LM Types for Link 2
+      // Bandwidth and LM Types for Secondary 2
       link2BandwidthValue: currentConnection.link2BandwidthValue || '',
       link2ConnectionTypes: currentConnection.link2ConnectionTypes || [],
       // Remarks
@@ -2126,7 +2152,7 @@ export function NewDIAServiceRequest() {
         if (conn.portRedundancy) extras.push('Port Redundancy');
         if (extras.length > 0) parts.push(`(${extras.join(', ')})`);
       } else {
-        // Link 2
+        // Secondary 2
         if (conn.link2PortTypeSize) parts.push(conn.link2PortTypeSize);
         if (conn.link2BandwidthType) parts.push(conn.link2BandwidthType === 'burstable' ? 'Burstable' : 'Fixed');
         if (conn.link2BurstOption && conn.link2BandwidthType === 'burstable') parts.push(conn.link2BurstOption);
@@ -2143,7 +2169,7 @@ export function NewDIAServiceRequest() {
         if (conn.portBandwidth) parts.push(conn.portBandwidth);
         if (conn.ipType) parts.push(`IP: ${conn.ipType}`);
       } else {
-        // Link 2
+        // Secondary 2
         if (conn.link2LinkType) parts.push(conn.link2LinkType);
         if (conn.link2PortType) parts.push(conn.link2PortType);
         if (conn.link2PortBandwidth) parts.push(conn.link2PortBandwidth);
@@ -2781,7 +2807,7 @@ export function NewDIAServiceRequest() {
 
                   <div>
                     <Label>Priority *</Label>
-                    <Select value={requirementInfo.priority} onValueChange={(val) => setRequirementInfo({ ...requirementInfo, priority: val })}>
+                    <Select value={requirementInfo.priority} onValueChange={(val: string) => setRequirementInfo({ ...requirementInfo, priority: val })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
@@ -2795,7 +2821,7 @@ export function NewDIAServiceRequest() {
                   </div>
                   <div>
                     <Label>Contract Term *</Label>
-                    <Select value={requirementInfo.contractTerm} onValueChange={(val) => setRequirementInfo({ ...requirementInfo, contractTerm: val })}>
+                    <Select value={requirementInfo.contractTerm} onValueChange={(val: string) => setRequirementInfo({ ...requirementInfo, contractTerm: val })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select term" />
                       </SelectTrigger>
@@ -2819,7 +2845,7 @@ export function NewDIAServiceRequest() {
                   </div>
                   <div>
                     <Label>Budget Range *</Label>
-                    <Select value={requirementInfo.budgetRange} onValueChange={(val) => setRequirementInfo({ ...requirementInfo, budgetRange: val })}>
+                    <Select value={requirementInfo.budgetRange} onValueChange={(val: string) => setRequirementInfo({ ...requirementInfo, budgetRange: val })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select budget range" />
                       </SelectTrigger>
@@ -2835,7 +2861,7 @@ export function NewDIAServiceRequest() {
                   </div>
                   <div>
                     <Label>Billing Preference</Label>
-                    <Select value={requirementInfo.billingPreference} onValueChange={(val) => setRequirementInfo({ ...requirementInfo, billingPreference: val })}>
+                    <Select value={requirementInfo.billingPreference} onValueChange={(val: string) => setRequirementInfo({ ...requirementInfo, billingPreference: val })}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select billing preference" />
                       </SelectTrigger>
@@ -2979,7 +3005,7 @@ export function NewDIAServiceRequest() {
                         <Label>Current Hosting Model</Label>
                         <Select
                           value={infrastructureInfo.currentHostingModel}
-                          onValueChange={(val) => setInfrastructureInfo({ ...infrastructureInfo, currentHostingModel: val })}
+                          onValueChange={(val: string) => setInfrastructureInfo({ ...infrastructureInfo, currentHostingModel: val })}
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select hosting model" />
@@ -2999,7 +3025,7 @@ export function NewDIAServiceRequest() {
                         <Label>Existing Provider</Label>
                         <RadioGroup
                           value={infrastructureInfo.existingProvider}
-                          onValueChange={(val) => setInfrastructureInfo({ ...infrastructureInfo, existingProvider: val, existingProviderName: val === 'No' ? '' : infrastructureInfo.existingProviderName })}
+                          onValueChange={(val: string) => setInfrastructureInfo({ ...infrastructureInfo, existingProvider: val, existingProviderName: val === 'No' ? '' : infrastructureInfo.existingProviderName })}
                         >
                           <div className="flex items-center space-x-6">
                             <div className="flex items-center space-x-2">
@@ -3259,7 +3285,7 @@ export function NewDIAServiceRequest() {
                     </div>
                     <div>
                       <Label className="text-gray-900 mb-2 block">Order Type *</Label>
-                      <Select value={requirementInfo.orderType} onValueChange={(val) => setRequirementInfo({ ...requirementInfo, orderType: val })}>
+                      <Select value={requirementInfo.orderType} onValueChange={(val: string) => setRequirementInfo({ ...requirementInfo, orderType: val })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select order type" />
                         </SelectTrigger>
@@ -3867,7 +3893,7 @@ export function NewDIAServiceRequest() {
                   <div className="flex items-center justify-between px-[28px] pt-6 pb-[28px]">
                     <div className="flex items-center space-x-4">
                       <Label className="text-gray-900">Feasibility Count:</Label>
-                      {requirementInfo.product === 'P2P' ? (
+                      {false ? ( // P2P feature not yet available for product type 'DIA' | 'MPLS'
                         <div className="contents">
                           <div className="flex items-center space-x-2">
                             <Button
@@ -4355,7 +4381,7 @@ export function NewDIAServiceRequest() {
                                           id={`individual-bandwidth-${currentModifyLink.id}`}
                                           checked={individualLinkModifications[currentModifyLink.id]?.bandwidth || false}
                                           disabled={individualLinkModifications[currentModifyLink.id]?.addSecondaryTertiary || false}
-                                          onCheckedChange={(checked) => {
+                                          onCheckedChange={(checked: boolean) => {
                                             setIndividualLinkModifications({
                                               ...individualLinkModifications,
                                               [currentModifyLink.id]: {
@@ -4385,7 +4411,7 @@ export function NewDIAServiceRequest() {
                                           id={`individual-address-${currentModifyLink.id}`}
                                           checked={individualLinkModifications[currentModifyLink.id]?.address || false}
                                           disabled={individualLinkModifications[currentModifyLink.id]?.addSecondaryTertiary || false}
-                                          onCheckedChange={(checked) => {
+                                          onCheckedChange={(checked: boolean) => {
                                             setIndividualLinkModifications({
                                               ...individualLinkModifications,
                                               [currentModifyLink.id]: {
@@ -4415,7 +4441,7 @@ export function NewDIAServiceRequest() {
                                           id={`individual-lm-${currentModifyLink.id}`}
                                           checked={individualLinkModifications[currentModifyLink.id]?.lm || false}
                                           disabled={individualLinkModifications[currentModifyLink.id]?.addSecondaryTertiary || false}
-                                          onCheckedChange={(checked) => {
+                                          onCheckedChange={(checked: boolean) => {
                                             setIndividualLinkModifications({
                                               ...individualLinkModifications,
                                               [currentModifyLink.id]: {
@@ -4453,7 +4479,7 @@ export function NewDIAServiceRequest() {
                                   <Checkbox
                                     id={`individual-secondary-${currentModifyLink.id}`}
                                     checked={individualLinkModifications[currentModifyLink.id]?.addSecondaryTertiary || false}
-                                    onCheckedChange={(checked) => {
+                                    onCheckedChange={(checked: boolean) => {
                                       setIndividualLinkModifications({
                                         ...individualLinkModifications,
                                         [currentModifyLink.id]: {
@@ -4549,7 +4575,7 @@ export function NewDIAServiceRequest() {
                                 idPrefix="secondary"
                                 showCompletionIndicator={true}
                                 fiberOnly={currentModifyLink.addressType === 'Sify DC' || currentModifyLink.addressType === 'Connected DC' || currentModifyLink.addressType === 'Connected Building'}
-                                disableWireless={selectedNewBandwidth && parseInt(selectedNewBandwidth) > 50}
+                                disableWireless={(selectedNewBandwidth && parseInt(selectedNewBandwidth) > 50) || false}
                               />
 
                               {/* Remarks */}
@@ -4872,7 +4898,7 @@ export function NewDIAServiceRequest() {
                                       </div>
                                       <div>
                                         <Label className="text-sm text-gray-700">Data Centre *</Label>
-                                        <Select value={modifyDCName} onValueChange={(value) => {
+                                        <Select value={modifyDCName} onValueChange={(value: string) => {
                                           setModifyDCName(value);
                                           // Auto-fill pincode, latitude, longitude from DC data
                                           const dc = SIFY_DATA_CENTERS.find(d => d.name === value);
@@ -5001,7 +5027,7 @@ export function NewDIAServiceRequest() {
                                       </div>
                                       <div>
                                         <Label className="text-sm text-gray-700">Connected DC Name *</Label>
-                                        <Select value={modifyConnectedDCName} onValueChange={(value) => {
+                                        <Select value={modifyConnectedDCName} onValueChange={(value: string) => {
                                           setModifyConnectedDCName(value);
                                           // Auto-fill pincode, latitude, longitude from connected DC data
                                           const dc = CONNECTED_DATA_CENTERS.find(d => d.name === value);
@@ -5707,8 +5733,8 @@ export function NewDIAServiceRequest() {
                                         )}
                                       </div>
                                     )}
-                                    {!conn.connectionTypes?.length && conn.connectionType && (
-                                      <div className="text-xs text-gray-600">🔗 {conn.connectionType}</div>
+                                    {!conn.connectionTypes?.length && false && ( // connectionType property does not exist
+                                      <div className="text-xs text-gray-600">🔗 Legacy connection</div>
                                     )}
                                     {/* Display Cross Connect if present */}
                                     {conn.crossConnectResponsibility && (
@@ -5954,7 +5980,7 @@ export function NewDIAServiceRequest() {
                                   <Label>Data Centre *</Label>
                                   <Select
                                     value={currentConnection.dcName}
-                                    onValueChange={(val) => setCurrentConnection({ ...currentConnection, dcName: val })}
+                                    onValueChange={(val: string) => setCurrentConnection({ ...currentConnection, dcName: val })}
                                   >
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select data centre" />
@@ -6307,7 +6333,7 @@ export function NewDIAServiceRequest() {
                                       variant="ghost"
                                       size="sm"
                                       onClick={() => {
-                                        const updatedVAS = currentConnection.vas.filter((_, i) => i !== index);
+                                        const updatedVAS = (currentConnection.vas || []).filter((_, i) => i !== index);
                                         setCurrentConnection({ ...currentConnection, vas: updatedVAS });
                                       }}
                                     >
@@ -6956,7 +6982,7 @@ export function NewDIAServiceRequest() {
                             <Select
                               value={currentConnection.numberOfLinks || 'Single'}
                               onValueChange={(val: 'Single' | 'Dual link with single cloud' | 'Dual link with dual cloud') => {
-                                // Reset link 2 fields if switching from dual to single
+                                // Reset Secondary 2 fields if switching from dual to single
                                 if (val === 'Single') {
                                   setCurrentConnection({
                                     ...currentConnection,
@@ -7077,7 +7103,7 @@ export function NewDIAServiceRequest() {
                                     </Label>
                                     <Select
                                       value={currentConnection.linkType || ''}
-                                      onValueChange={(val) => setCurrentConnection({ ...currentConnection, linkType: val })}
+                                      onValueChange={(val: string) => setCurrentConnection({ ...currentConnection, linkType: val })}
                                     >
                                       <SelectTrigger id={`port-classification-${selectedConnectionIndex}`}>
                                         <SelectValue placeholder="Select" />
@@ -7121,11 +7147,9 @@ export function NewDIAServiceRequest() {
                                         <SelectValue placeholder="Select" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="100 Mbps">100 Mbps</SelectItem>
-                                        <SelectItem value="1 Gbps">1 Gbps</SelectItem>
-                                        <SelectItem value="10 Gbps">10 Gbps</SelectItem>
-                                        <SelectItem value="40 Gbps">40 Gbps</SelectItem>
-                                        <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                        {getFilteredPortBandwidthOptions(currentConnection.bandwidthValue || '').map((option) => (
+                                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                        ))}
                                       </SelectContent>
                                     </Select>
                                   </div>
@@ -7384,11 +7408,11 @@ export function NewDIAServiceRequest() {
                           <div className="border-2 border-blue-300 rounded-lg p-6 bg-blue-50/30">
                             <div className="flex items-center gap-2 mb-6">
                               <div className="bg-blue-600 text-white px-3 py-1.5 rounded-md font-semibold text-sm">
-                                Link 1
+                                Primary 1
                               </div>
                             </div>
 
-                            {/* Cloud/Network Provider for Dual links - Link 1 */}
+                            {/* Cloud/Network Provider for Dual links - Primary 1 */}
                             {(currentConnection.numberOfLinks === 'Dual link with single cloud' || currentConnection.numberOfLinks === 'Dual link with dual cloud') && (
                               <div className="mb-6 max-w-xs">
                                 <Label>Cloud/Network Provider *</Label>
@@ -7413,7 +7437,7 @@ export function NewDIAServiceRequest() {
                               </div>
                             )}
 
-                            {/* Link 1 Cross Connect Responsibility */}
+                            {/* Primary 1 Cross Connect Responsibility */}
                             {requirementInfo.orderType === 'New' && currentConnection.addressType &&
                               (currentConnection.addressType !== 'Custom Location' || currentConnection.isDataCenter === true) && (
                                 <div className="mb-6">
@@ -7742,11 +7766,11 @@ export function NewDIAServiceRequest() {
                           <div className="border-2 border-gray-300 rounded-lg p-6 bg-gray-50/30">
                             <div className="flex items-center gap-2 mb-6">
                               <div className="bg-gray-600 text-white px-3 py-1.5 rounded-md font-semibold text-sm">
-                                Link 2
+                                Secondary 2
                               </div>
                             </div>
 
-                            {/* Cloud/Network Provider for Dual links - Link 2 */}
+                            {/* Cloud/Network Provider for Dual links - Secondary 2 */}
                             {(currentConnection.numberOfLinks === 'Dual link with single cloud' || currentConnection.numberOfLinks === 'Dual link with dual cloud') && (
                               <div className="mb-6 max-w-xs">
                                 <Label>Cloud/Network Provider *</Label>
@@ -7771,7 +7795,7 @@ export function NewDIAServiceRequest() {
                               </div>
                             )}
 
-                            {/* Link 2 Cross Connect Responsibility */}
+                            {/* Secondary 2 Cross Connect Responsibility */}
                             {requirementInfo.orderType === 'New' && currentConnection.addressType &&
                               (currentConnection.addressType !== 'Custom Location' || currentConnection.isDataCenter === true) && (
                                 <div className="mb-6">
@@ -7860,11 +7884,9 @@ export function NewDIAServiceRequest() {
                                           <SelectValue placeholder="Select" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                          <SelectItem value="100 Mbps">100 Mbps</SelectItem>
-                                          <SelectItem value="1 Gbps">1 Gbps</SelectItem>
-                                          <SelectItem value="10 Gbps">10 Gbps</SelectItem>
-                                          <SelectItem value="40 Gbps">40 Gbps</SelectItem>
-                                          <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                          {getFilteredPortBandwidthOptions(currentConnection.link2BandwidthValue || '').map((option) => (
+                                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                          ))}
                                         </SelectContent>
                                       </Select>
                                     </div>
@@ -7996,11 +8018,9 @@ export function NewDIAServiceRequest() {
                                         <SelectValue placeholder="Select" />
                                       </SelectTrigger>
                                       <SelectContent>
-                                        <SelectItem value="100 Mbps">100 Mbps</SelectItem>
-                                        <SelectItem value="1 Gbps">1 Gbps</SelectItem>
-                                        <SelectItem value="10 Gbps">10 Gbps</SelectItem>
-                                        <SelectItem value="40 Gbps">40 Gbps</SelectItem>
-                                        <SelectItem value="100 Gbps">100 Gbps</SelectItem>
+                                        {getFilteredPortBandwidthOptions(currentConnection.link2BandwidthValue || '').map((option) => (
+                                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                        ))}
                                       </SelectContent>
                                     </Select>
                                   </div>

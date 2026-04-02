@@ -5,7 +5,7 @@ import { RadioGroup, RadioGroupItem } from './ui/radio-group';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 interface ConnectionType {
-  type: 'Fiber' | 'Wireless' | 'Broadband' | 'Leased Line - Fiber' | 'Leased Line - Wireless' | 'BSO - Fiber' | 'BSO - Wireless' | '3G/4G' | 'VSAT';
+  type: 'Fiber' | 'Wireless' | 'Broadband (With/Without Static IP)' | 'Leased Line Fiber' | 'Leased Line Wireless' | '4G/5G (Single/Dual Sim)' | 'VSAT';
   isPrimary: boolean;
   serviceProviders?: string[];
   providerPreference?: 'include' | 'exclude' | 'no-preference';
@@ -22,6 +22,8 @@ interface LMTypeSelectorProps {
   showCompletionIndicator?: boolean; 
   disableWireless?: boolean; 
   cloudProvider?: 'Sify' | 'Other ISP'; // New prop
+  addressType?: string; // Building/address type for conditional filtering
+  isDualCloud?: boolean; // True when link type is 'Dual link with dual cloud'
 }
 
 export function LMTypeSelector({ 
@@ -32,7 +34,9 @@ export function LMTypeSelector({
   dcLocation = false,
   showCompletionIndicator = false,
   disableWireless = false,
-  cloudProvider
+  cloudProvider,
+  addressType,
+  isDualCloud
 }: LMTypeSelectorProps) {
   const handleTypeChange = (type: ConnectionType['type'], checked: boolean, additionalData?: Partial<ConnectionType>) => {
     if (checked) {
@@ -53,7 +57,7 @@ export function LMTypeSelector({
   };
 
   const handleProviderPreferenceChange = (
-    type: 'Leased Line - Fiber' | 'Leased Line - Wireless',
+    type: 'Leased Line Fiber' | 'Leased Line - Wireless',
     value: 'include' | 'exclude' | 'no-preference'
   ) => {
     const newTypes = connectionTypes.map(ct => {
@@ -70,7 +74,7 @@ export function LMTypeSelector({
   };
 
   const handleProviderSelection = (
-    type: 'Leased Line - Fiber' | 'Leased Line - Wireless',
+    type: 'Leased Line Fiber' | 'Leased Line - Wireless',
     provider: string,
     checked: boolean
   ) => {
@@ -92,32 +96,20 @@ export function LMTypeSelector({
 
   const handleOthersChange = (checked: boolean) => {
     if (checked) {
-      // When checking Others, add Broadband by default with default IP type
+      // When checking Others, add Leased Line Fiber by default
       const newTypes = [...connectionTypes, {
-        type: 'Broadband' as const,
+        type: 'Leased Line Fiber' as const,
         isPrimary: connectionTypes.length === 0,
-        ipType: 'With Static IP' as const
+        serviceProviders: [],
+        providerPreference: 'no-preference' as const
       }];
       onConnectionTypesChange(newTypes);
     } else {
-      // Remove all Others types (but not VSAT)
-      const broadbandItem = connectionTypes.find(ct => ct.type === 'Broadband');
-      const leasedLineFiberItem = connectionTypes.find(ct => ct.type === 'Leased Line - Fiber');
-      const leasedLineWirelessItem = connectionTypes.find(ct => ct.type === 'Leased Line - Wireless');
-      const bsoFiberItem = connectionTypes.find(ct => ct.type === 'BSO - Fiber');
-      const bsoWirelessItem = connectionTypes.find(ct => ct.type === 'BSO - Wireless');
-      const threeGFourGItem = connectionTypes.find(ct => ct.type === '3G/4G');
-      const vsatItem = connectionTypes.find(ct => ct.type === 'VSAT');
-      const newTypes = connectionTypes.filter(ct => 
-        ct.type !== 'Broadband' && 
-        ct.type !== 'Leased Line - Fiber' && 
-        ct.type !== 'Leased Line - Wireless' &&
-        ct.type !== 'BSO - Fiber' &&
-        ct.type !== 'BSO - Wireless' &&
-        ct.type !== '3G/4G' &&
-        ct.type !== 'VSAT'
-      );
-      if ((broadbandItem?.isPrimary || leasedLineFiberItem?.isPrimary || leasedLineWirelessItem?.isPrimary || bsoFiberItem?.isPrimary || bsoWirelessItem?.isPrimary || threeGFourGItem?.isPrimary || vsatItem?.isPrimary) && newTypes.length > 0) {
+      // Remove all Others types
+      const removedTypes = ['Leased Line Fiber', 'Leased Line - Wireless', 'BSO - Fiber', 'BSO - Wireless'];
+      const removedPrimary = connectionTypes.find(ct => removedTypes.includes(ct.type))?.isPrimary;
+      const newTypes = connectionTypes.filter(ct => !removedTypes.includes(ct.type));
+      if (removedPrimary && newTypes.length > 0) {
         newTypes[0].isPrimary = true;
       }
       onConnectionTypesChange(newTypes);
@@ -126,9 +118,9 @@ export function LMTypeSelector({
 
   const handleSifyOthersChange = (checked: boolean) => {
     if (checked) {
-      // Add Leased Line - Fiber by default for Sify 'Others'
+      // Add Leased Line Fiber by default for Sify 'Others'
       const newTypes = [...connectionTypes, {
-        type: 'Leased Line - Fiber' as const,
+        type: 'Leased Line Fiber' as const,
         isPrimary: connectionTypes.length === 0,
         serviceProviders: [],
         providerPreference: 'no-preference' as const
@@ -136,7 +128,7 @@ export function LMTypeSelector({
       onConnectionTypesChange(newTypes);
     } else {
       // Remove Sify 'Others' (Leased Line Fiber/Wireless, BSO Fiber/Wireless)
-      const removedTypes = ['Leased Line - Fiber', 'Leased Line - Wireless', 'BSO - Fiber', 'BSO - Wireless'];
+      const removedTypes = ['Leased Line Fiber', 'Leased Line - Wireless', 'BSO - Fiber', 'BSO - Wireless'];
       const removedPrimary = connectionTypes.find(ct => removedTypes.includes(ct.type))?.isPrimary;
       const newTypes = connectionTypes.filter(ct => !removedTypes.includes(ct.type));
       if (removedPrimary && newTypes.length > 0) {
@@ -166,12 +158,12 @@ export function LMTypeSelector({
     onConnectionTypesChange(newTypes);
   };
 
-  const leasedLineFiber = connectionTypes.find(ct => ct.type === 'Leased Line - Fiber');
+  const leasedLineFiber = connectionTypes.find(ct => ct.type === 'Leased Line Fiber');
   const leasedLineWireless = connectionTypes.find(ct => ct.type === 'Leased Line - Wireless');
   const fiberPreference = leasedLineFiber?.providerPreference || 'no-preference';
   const wirelessPreference = leasedLineWireless?.providerPreference || 'no-preference';
 
-  // If DC location mode, show only Sify Fiber and Leased Line - Fiber
+  // If DC location mode, show only Sify Fiber and Leased Line Fiber
   if (dcLocation) {
     return (
       <div className="space-y-3">
@@ -184,7 +176,7 @@ export function LMTypeSelector({
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg space-y-3">
           <p className="text-xs text-blue-700 mb-3 flex items-start">
             <Info className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-            For DC locations, only Sify Fiber and Leased Line - Fiber are available
+            For DC locations, only Sify Fiber and Leased Line Fiber are available
           </p>
 
           <div className="space-y-3">
@@ -202,25 +194,25 @@ export function LMTypeSelector({
               </Label>
             </div>
 
-            {/* Leased Line - Fiber */}
+            {/* Leased Line Fiber */}
             <div className="space-y-2">
               <div className="flex items-center space-x-2">
                 <input
                   type="checkbox"
                   id={`${idPrefix}-LeasedLine-Fiber-dc`}
-                  checked={connectionTypes.some(ct => ct.type === 'Leased Line - Fiber')}
-                  onChange={(e) => handleTypeChange('Leased Line - Fiber', e.target.checked, {
+                  checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber')}
+                  onChange={(e) => handleTypeChange('Leased Line Fiber', e.target.checked, {
                     serviceProviders: [],
                     providerPreference: 'no-preference'
                   })}
                   className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                 />
                 <Label htmlFor={`${idPrefix}-LeasedLine-Fiber-dc`} className="cursor-pointer font-medium text-sm">
-                  Leased Line - Fiber
+                  Leased Line Fiber
                 </Label>
               </div>
               
-              {/* Service Provider Selection for Leased Line - Fiber */}
+              {/* Service Provider Selection for Leased Line Fiber */}
               {leasedLineFiber && (
                 <div className="ml-6 pl-3 border-l border-gray-200 space-y-3">
                   <div>
@@ -228,7 +220,7 @@ export function LMTypeSelector({
                     <RadioGroup
                       value={fiberPreference}
                       onValueChange={(value: 'include' | 'exclude' | 'no-preference') => {
-                        handleProviderPreferenceChange('Leased Line - Fiber', value);
+                        handleProviderPreferenceChange('Leased Line Fiber', value);
                       }}
                     >
                       <div className="space-y-2">
@@ -266,7 +258,7 @@ export function LMTypeSelector({
                               id={`${idPrefix}-provider-fiber-dc-${provider}`}
                               checked={leasedLineFiber.serviceProviders?.includes(provider) || false}
                               onCheckedChange={(checked) => {
-                                handleProviderSelection('Leased Line - Fiber', provider, checked as boolean);
+                                handleProviderSelection('Leased Line Fiber', provider, checked as boolean);
                               }}
                             />
                             <Label htmlFor={`${idPrefix}-provider-fiber-dc-${provider}`} className="text-xs cursor-pointer">
@@ -351,7 +343,7 @@ export function LMTypeSelector({
     );
   }
 
-  if (cloudProvider === 'Sify') {
+  if (cloudProvider === 'Sify' || (cloudProvider === 'Other ISP' && !isDualCloud && (addressType === 'Connected Building' || addressType === 'Custom Location'))) {
     return (
       <div className="space-y-3">
         <div className="flex items-center space-x-2">
@@ -395,7 +387,7 @@ export function LMTypeSelector({
               <input
                 type="checkbox"
                 id={`${idPrefix}-Others-sify`}
-                checked={connectionTypes.some(ct => ct.type === 'Leased Line - Fiber' || ct.type === 'Leased Line - Wireless' || ct.type === 'BSO - Fiber' || ct.type === 'BSO - Wireless')}
+                checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber' || ct.type === 'Leased Line - Wireless' || ct.type === 'BSO - Fiber' || ct.type === 'BSO - Wireless')}
                 onChange={(e) => handleSifyOthersChange(e.target.checked)}
                 className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
               />
@@ -405,16 +397,16 @@ export function LMTypeSelector({
             </div>
 
             {/* Sify Others Sub-options */}
-            {connectionTypes.some(ct => ct.type === 'Leased Line - Fiber' || ct.type === 'Leased Line - Wireless' || ct.type === 'BSO - Fiber' || ct.type === 'BSO - Wireless') && (
+            {connectionTypes.some(ct => ct.type === 'Leased Line Fiber' || ct.type === 'Leased Line - Wireless' || ct.type === 'BSO - Fiber' || ct.type === 'BSO - Wireless') && (
               <div className="ml-6 pl-4 border-l-2 border-gray-200 space-y-3 mt-2">
-                {/* Other ISP Fiber (Leased Line - Fiber) */}
+                {/* Other ISP Fiber (Leased Line Fiber) */}
                 <div className="space-y-2">
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
                       id={`${idPrefix}-Sify-OtherISP-Fiber`}
-                      checked={connectionTypes.some(ct => ct.type === 'Leased Line - Fiber')}
-                      onChange={(e) => handleTypeChange('Leased Line - Fiber', e.target.checked, {
+                      checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber')}
+                      onChange={(e) => handleTypeChange('Leased Line Fiber', e.target.checked, {
                         serviceProviders: [],
                         providerPreference: 'no-preference'
                       })}
@@ -424,14 +416,14 @@ export function LMTypeSelector({
                       Other ISP Fiber
                     </Label>
                   </div>
-                  {/* Service Provider Selection for Leased Line - Fiber */}
+                  {/* Service Provider Selection for Leased Line Fiber */}
                   {leasedLineFiber && (
                     <div className="ml-6 pl-3 border-l border-gray-200 mt-2">
                       <Label className="text-xs mb-2 block font-medium">Service Provider Preference</Label>
                       <RadioGroup
                         value={leasedLineFiber.providerPreference || 'no-preference'}
                         onValueChange={(value: 'include' | 'exclude' | 'no-preference') => {
-                          handleProviderPreferenceChange('Leased Line - Fiber', value);
+                          handleProviderPreferenceChange('Leased Line Fiber', value);
                         }}
                       >
                         <div className="space-y-2">
@@ -457,7 +449,7 @@ export function LMTypeSelector({
                                 <Checkbox
                                   id={`${idPrefix}-sify-provider-fiber-${provider}`}
                                   checked={leasedLineFiber?.serviceProviders?.includes(provider) || false}
-                                  onCheckedChange={(checked) => handleProviderSelection('Leased Line - Fiber', provider, checked as boolean)}
+                                  onCheckedChange={(checked) => handleProviderSelection('Leased Line Fiber', provider, checked as boolean)}
                                 />
                                 <Label htmlFor={`${idPrefix}-sify-provider-fiber-${provider}`} className="text-xs cursor-pointer">{provider}</Label>
                               </div>
@@ -577,13 +569,13 @@ export function LMTypeSelector({
           )}
         </div>
         <div className="space-y-3 border border-gray-200 rounded-lg p-4">
-          {/* Other ISP Fiber (Leased Line - Fiber) */}
+          {/* Other ISP Fiber (Leased Line Fiber) */}
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               id={`${idPrefix}-OtherISP-Fiber`}
-              checked={connectionTypes.some(ct => ct.type === 'Leased Line - Fiber')}
-              onChange={(e) => handleTypeChange('Leased Line - Fiber', e.target.checked, {
+              checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber')}
+              onChange={(e) => handleTypeChange('Leased Line Fiber', e.target.checked, {
                 serviceProviders: [],
                 providerPreference: 'no-preference'
               })}
@@ -594,14 +586,14 @@ export function LMTypeSelector({
             </Label>
           </div>
           
-          {connectionTypes.some(ct => ct.type === 'Leased Line - Fiber') && (
+          {connectionTypes.some(ct => ct.type === 'Leased Line Fiber') && (
             <div className="ml-6 pl-3 border-l border-gray-200 space-y-3 mb-4">
               <div>
                 <Label className="text-xs mb-2 block font-medium">Service Provider Preference</Label>
                 <RadioGroup
                   value={leasedLineFiber?.providerPreference || 'no-preference'}
                   onValueChange={(value: 'include' | 'exclude' | 'no-preference') => {
-                    handleProviderPreferenceChange('Leased Line - Fiber', value);
+                    handleProviderPreferenceChange('Leased Line Fiber', value);
                   }}
                 >
                   <div className="space-y-2">
@@ -636,7 +628,7 @@ export function LMTypeSelector({
                           id={`${idPrefix}-otherisp-provider-fiber-${provider}`}
                           checked={leasedLineFiber?.serviceProviders?.includes(provider) || false}
                           onCheckedChange={(checked) => {
-                            handleProviderSelection('Leased Line - Fiber', provider, checked as boolean);
+                            handleProviderSelection('Leased Line Fiber', provider, checked as boolean);
                           }}
                         />
                         <Label htmlFor={`${idPrefix}-otherisp-provider-fiber-${provider}`} className="text-xs cursor-pointer">
@@ -722,7 +714,181 @@ export function LMTypeSelector({
               )}
             </div>
           )}
-        </div>
+          {/* Others Section - Always Visible */}
+          <div className="mt-6 pt-4 border-t border-gray-300">
+            <div className="space-y-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id={`${idPrefix}-Others-OtherISP`}
+                  checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber' || ct.type === 'Leased Line Wireless' || ct.type === 'Broadband (With/Without Static IP)' || ct.type === '4G/5G (Single/Dual Sim)' || ct.type === 'VSAT')}
+                  onChange={(e) => handleOthersChange(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                />
+                <Label htmlFor={`${idPrefix}-Others-OtherISP`} className="cursor-pointer font-medium text-sm">
+                  Others
+                </Label>
+              </div>
+
+              {/* Sub-options for Others */}
+              {connectionTypes.some(ct => ct.type === 'Leased Line Fiber' || ct.type === 'Leased Line Wireless' || ct.type === 'Broadband (With/Without Static IP)' || ct.type === '4G/5G (Single/Dual Sim)' || ct.type === 'VSAT') && (
+                <div className="ml-6 pl-4 border-l-2 border-gray-200 space-y-3">
+                  
+                  {/* Broadband */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`${idPrefix}-Broadband-OtherISP`}
+                        checked={connectionTypes.some(ct => ct.type === 'Broadband (With/Without Static IP)')}
+                        onChange={(e) => handleTypeChange('Broadband (With/Without Static IP)', e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <Label htmlFor={`${idPrefix}-Broadband-OtherISP`} className="cursor-pointer text-sm">
+                        Broadband
+                      </Label>
+                    </div>
+
+                    {/* Broadband Sub-options */}
+                    {connectionTypes.some(ct => ct.type === 'Broadband (With/Without Static IP)') && (
+                      <div className="ml-6 pl-3 border-l border-gray-200 space-y-2">
+                        <div>
+                          <Label className="text-xs mb-2 block font-medium">IP Configuration</Label>
+                          <RadioGroup
+                            value={connectionTypes.find(ct => ct.type === 'Broadband (With/Without Static IP)')?.broadbandIPType || 'With Static IP'}
+                            onValueChange={(value: 'With Static IP' | 'Without Static IP') => {
+                              const newTypes = connectionTypes.map(ct => {
+                                if (ct.type === 'Broadband (With/Without Static IP)') {
+                                  return { ...ct, broadbandIPType: value };
+                                }
+                                return ct;
+                              });
+                              onConnectionTypesChange(newTypes);
+                            }}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="With Static IP" id={`${idPrefix}-broadband-static-otherisp`} />
+                                <Label htmlFor={`${idPrefix}-broadband-static-otherisp`} className="text-xs cursor-pointer font-normal">
+                                  With Static IP
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Without Static IP" id={`${idPrefix}-broadband-dynamic-otherisp`} />
+                                <Label htmlFor={`${idPrefix}-broadband-dynamic-otherisp`} className="text-xs cursor-pointer font-normal">
+                                  Without Static IP
+                                </Label>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* 4G/5G */}
+                  <div className="space-y-2">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`${idPrefix}-4G5G-OtherISP`}
+                        checked={connectionTypes.some(ct => ct.type === '4G/5G (Single/Dual Sim)')}
+                        onChange={(e) => handleTypeChange('4G/5G (Single/Dual Sim)', e.target.checked)}
+                        className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                      />
+                      <Label htmlFor={`${idPrefix}-4G5G-OtherISP`} className="cursor-pointer text-sm">
+                        4G/5G
+                      </Label>
+                    </div>
+
+                    {/* 4G/5G Sub-options */}
+                    {connectionTypes.some(ct => ct.type === '4G/5G (Single/Dual Sim)') && (
+                      <div className="ml-6 pl-3 border-l border-gray-200 space-y-2">
+                        <div>
+                          <Label className="text-xs mb-2 block font-medium">SIM Configuration</Label>
+                          <RadioGroup
+                            value={connectionTypes.find(ct => ct.type === '4G/5G (Single/Dual Sim)')?.sim4G5GType || 'Single Sim'}
+                            onValueChange={(value: 'Single Sim' | 'Dual Sim') => {
+                              const newTypes = connectionTypes.map(ct => {
+                                if (ct.type === '4G/5G (Single/Dual Sim)') {
+                                  return { ...ct, sim4G5GType: value };
+                                }
+                                return ct;
+                              });
+                              onConnectionTypesChange(newTypes);
+                            }}
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Single Sim" id={`${idPrefix}-4g5g-single-otherisp`} />
+                                <Label htmlFor={`${idPrefix}-4g5g-single-otherisp`} className="text-xs cursor-pointer font-normal">
+                                  Single Sim
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="Dual Sim" id={`${idPrefix}-4g5g-dual-otherisp`} />
+                                <Label htmlFor={`${idPrefix}-4g5g-dual-otherisp`} className="text-xs cursor-pointer font-normal">
+                                  Dual Sim
+                                </Label>
+                              </div>
+                            </div>
+                          </RadioGroup>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* VSAT */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`${idPrefix}-VSAT-OtherISP`}
+                      checked={connectionTypes.some(ct => ct.type === 'VSAT')}
+                      onChange={(e) => handleTypeChange('VSAT', e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <Label htmlFor={`${idPrefix}-VSAT-OtherISP`} className="cursor-pointer text-sm">
+                      VSAT
+                    </Label>
+                  </div>
+
+                  {/* Leased Line Fiber */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`${idPrefix}-LeasedLineFiber-OtherISP`}
+                      checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber')}
+                      onChange={(e) => handleTypeChange('Leased Line Fiber', e.target.checked, {
+                        serviceProviders: [],
+                        providerPreference: 'no-preference'
+                      })}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <Label htmlFor={`${idPrefix}-LeasedLineFiber-OtherISP`} className="cursor-pointer text-sm">
+                      Leased Line Fiber
+                    </Label>
+                  </div>
+
+                  {/* Leased Line Wireless */}
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id={`${idPrefix}-LeasedLineWireless-OtherISP`}
+                      checked={connectionTypes.some(ct => ct.type === 'Leased Line Wireless')}
+                      onChange={(e) => handleTypeChange('Leased Line Wireless', e.target.checked, {
+                        serviceProviders: [],
+                        providerPreference: 'no-preference'
+                      })}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    />
+                    <Label htmlFor={`${idPrefix}-LeasedLineWireless-OtherISP`} className="cursor-pointer text-sm">
+                      Leased Line Wireless
+                    </Label>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>        </div>
       </div>
     );
   }
@@ -773,13 +939,13 @@ export function LMTypeSelector({
           </div>
         </div>
 
-        {/* Others (Leased Line - Fiber, Leased Line - Wireless, Broadband, BSO, 3G/4G) */}
+        {/* Others (Leased Line Fiber, Leased Line Wireless, Broadband, 4G/5G, VSAT) */}
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
             <input
               type="checkbox"
               id={`${idPrefix}-Others`}
-              checked={connectionTypes.some(ct => ct.type === 'Broadband' || ct.type === 'Leased Line - Fiber' || ct.type === 'Leased Line - Wireless' || ct.type === 'BSO - Fiber' || ct.type === 'BSO - Wireless' || ct.type === '3G/4G')}
+              checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber' || ct.type === 'Leased Line Wireless' || ct.type === 'Broadband (With/Without Static IP)' || ct.type === '4G/5G (Single/Dual Sim)' || ct.type === 'VSAT')}
               onChange={(e) => handleOthersChange(e.target.checked)}
               className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
             />
@@ -789,200 +955,17 @@ export function LMTypeSelector({
           </div>
 
           {/* Sub-options for Others */}
-          {connectionTypes.some(ct => ct.type === 'Broadband' || ct.type === 'Leased Line - Fiber' || ct.type === 'Leased Line - Wireless' || ct.type === 'BSO - Fiber' || ct.type === 'BSO - Wireless' || ct.type === '3G/4G') && (
+          {connectionTypes.some(ct => ct.type === 'Leased Line Fiber' || ct.type === 'Leased Line Wireless' || ct.type === 'Broadband (With/Without Static IP)' || ct.type === '4G/5G (Single/Dual Sim)' || ct.type === 'VSAT') && (
             <div className="ml-6 pl-4 border-l-2 border-gray-200 space-y-3">
-              {/* Leased Line - Fiber */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`${idPrefix}-OtherISP-Fiber-default`}
-                    checked={connectionTypes.some(ct => ct.type === 'Leased Line - Fiber')}
-                    onChange={(e) => handleTypeChange('Leased Line - Fiber', e.target.checked, {
-                      serviceProviders: [],
-                      providerPreference: 'no-preference'
-                    })}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                  <Label htmlFor={`${idPrefix}-OtherISP-Fiber-default`} className="cursor-pointer text-sm">
-                    Leased Line - Fiber
-                  </Label>
-                </div>
-                
-                {/* Service Provider Selection for Leased Line - Fiber */}
-                {leasedLineFiber && (
-                  <div className="ml-6 pl-3 border-l border-gray-200 space-y-3">
-                    <div>
-                      <Label className="text-xs mb-2 block font-medium">Service Provider Preference</Label>
-                      <RadioGroup
-                        value={fiberPreference}
-                        onValueChange={(value: 'include' | 'exclude' | 'no-preference') => {
-                          handleProviderPreferenceChange('Leased Line - Fiber', value);
-                        }}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="no-preference" id={`${idPrefix}-fiber-no-pref`} />
-                            <Label htmlFor={`${idPrefix}-fiber-no-pref`} className="text-xs cursor-pointer font-normal">
-                              No preference (any provider is fine)
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="include" id={`${idPrefix}-fiber-include`} />
-                            <Label htmlFor={`${idPrefix}-fiber-include`} className="text-xs cursor-pointer font-normal">
-                              Select specific providers (only these)
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="exclude" id={`${idPrefix}-fiber-exclude`} />
-                            <Label htmlFor={`${idPrefix}-fiber-exclude`} className="text-xs cursor-pointer font-normal">
-                              Exclude specific providers (NOT these)
-                            </Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    {fiberPreference !== 'no-preference' && (
-                      <div className="pl-3 border-l-2 border-blue-200">
-                        <Label className="text-xs mb-2 block">
-                          {fiberPreference === 'include' ? 'Select providers to INCLUDE:' : 'Select providers to EXCLUDE:'}
-                        </Label>
-                        <div className="space-y-1.5">
-                          {['Airtel', 'Jio', 'Tata Communications', 'BSNL', 'Vodafone Idea'].map((provider) => (
-                            <div key={provider} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`${idPrefix}-provider-fiber-${provider}`}
-                                checked={leasedLineFiber.serviceProviders?.includes(provider) || false}
-                                onCheckedChange={(checked) => {
-                                  handleProviderSelection('Leased Line - Fiber', provider, checked as boolean);
-                                }}
-                              />
-                              <Label htmlFor={`${idPrefix}-provider-fiber-${provider}`} className="text-xs cursor-pointer">
-                                {provider}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                        {fiberPreference === 'exclude' && leasedLineFiber.serviceProviders && leasedLineFiber.serviceProviders.length > 0 && (
-                          <p className="text-xs text-orange-600 mt-2 flex items-start">
-                            <AlertCircle className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            Will accept any provider EXCEPT: {leasedLineFiber.serviceProviders.join(', ')}
-                          </p>
-                        )}
-                        {fiberPreference === 'include' && leasedLineFiber.serviceProviders && leasedLineFiber.serviceProviders.length > 0 && (
-                          <p className="text-xs text-green-600 mt-2 flex items-start">
-                            <CheckCircle className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            Will ONLY accept: {leasedLineFiber.serviceProviders.join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Leased Line - Wireless */}
-              <div className="space-y-2">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="checkbox"
-                    id={`${idPrefix}-OtherISP-Wireless`}
-                    checked={connectionTypes.some(ct => ct.type === 'Leased Line - Wireless')}
-                    onChange={(e) => handleTypeChange('Leased Line - Wireless', e.target.checked, {
-                      serviceProviders: [],
-                      providerPreference: 'no-preference'
-                    })}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                  />
-                  <Label htmlFor={`${idPrefix}-OtherISP-Wireless`} className="cursor-pointer text-sm">
-                    Leased Line - Wireless
-                  </Label>
-                </div>
-                
-                {/* Service Provider Selection for Leased Line - Wireless */}
-                {leasedLineWireless && (
-                  <div className="ml-6 pl-3 border-l border-gray-200 space-y-3">
-                    <div>
-                      <Label className="text-xs mb-2 block font-medium">Service Provider Preference</Label>
-                      <RadioGroup
-                        value={wirelessPreference}
-                        onValueChange={(value: 'include' | 'exclude' | 'no-preference') => {
-                          handleProviderPreferenceChange('Leased Line - Wireless', value);
-                        }}
-                      >
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="no-preference" id={`${idPrefix}-wireless-no-pref`} />
-                            <Label htmlFor={`${idPrefix}-wireless-no-pref`} className="text-xs cursor-pointer font-normal">
-                              No preference (any provider is fine)
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="include" id={`${idPrefix}-wireless-include`} />
-                            <Label htmlFor={`${idPrefix}-wireless-include`} className="text-xs cursor-pointer font-normal">
-                              Select specific providers (only these)
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="exclude" id={`${idPrefix}-wireless-exclude`} />
-                            <Label htmlFor={`${idPrefix}-wireless-exclude`} className="text-xs cursor-pointer font-normal">
-                              Exclude specific providers (NOT these)
-                            </Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    {wirelessPreference !== 'no-preference' && (
-                      <div className="pl-3 border-l-2 border-blue-200">
-                        <Label className="text-xs mb-2 block">
-                          {wirelessPreference === 'include' ? 'Select providers to INCLUDE:' : 'Select providers to EXCLUDE:'}
-                        </Label>
-                        <div className="space-y-1.5">
-                          {['Airtel', 'Jio', 'Tata Communications', 'BSNL', 'Vodafone Idea'].map((provider) => (
-                            <div key={provider} className="flex items-center space-x-2">
-                              <Checkbox
-                                id={`${idPrefix}-provider-wireless-${provider}`}
-                                checked={leasedLineWireless.serviceProviders?.includes(provider) || false}
-                                onCheckedChange={(checked) => {
-                                  handleProviderSelection('Leased Line - Wireless', provider, checked as boolean);
-                                }}
-                              />
-                              <Label htmlFor={`${idPrefix}-provider-wireless-${provider}`} className="text-xs cursor-pointer">
-                                {provider}
-                              </Label>
-                            </div>
-                          ))}
-                        </div>
-                        {wirelessPreference === 'exclude' && leasedLineWireless.serviceProviders && leasedLineWireless.serviceProviders.length > 0 && (
-                          <p className="text-xs text-orange-600 mt-2 flex items-start">
-                            <AlertCircle className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            Will accept any provider EXCEPT: {leasedLineWireless.serviceProviders.join(', ')}
-                          </p>
-                        )}
-                        {wirelessPreference === 'include' && leasedLineWireless.serviceProviders && leasedLineWireless.serviceProviders.length > 0 && (
-                          <p className="text-xs text-green-600 mt-2 flex items-start">
-                            <CheckCircle className="w-3 h-3 mr-1 mt-0.5 flex-shrink-0" />
-                            Will ONLY accept: {leasedLineWireless.serviceProviders.join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Broadband */}
+              
+              {/* Broadband (With/Without Static IP) */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     id={`${idPrefix}-Broadband`}
-                    checked={connectionTypes.some(ct => ct.type === 'Broadband')}
-                    onChange={(e) => handleTypeChange('Broadband', e.target.checked, {
-                      ipType: 'With Static IP'
-                    })}
+                    checked={connectionTypes.some(ct => ct.type === 'Broadband (With/Without Static IP)')}
+                    onChange={(e) => handleTypeChange('Broadband (With/Without Static IP)', e.target.checked)}
                     className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
                   <Label htmlFor={`${idPrefix}-Broadband`} className="cursor-pointer text-sm">
@@ -990,105 +973,91 @@ export function LMTypeSelector({
                   </Label>
                 </div>
 
-                {/* IP Type for Broadband */}
-                {connectionTypes.some(ct => ct.type === 'Broadband') && (
+                {/* Broadband Sub-options */}
+                {connectionTypes.some(ct => ct.type === 'Broadband (With/Without Static IP)') && (
                   <div className="ml-6 pl-3 border-l border-gray-200 space-y-2">
-                    <Label className="text-xs mb-2 block font-medium">IP Type</Label>
-                    <RadioGroup
-                      value={connectionTypes.find(ct => ct.type === 'Broadband')?.ipType || 'With Static IP'}
-                      onValueChange={(value: 'With Static IP' | 'Without Static IP') => {
-                        handleBroadbandIpTypeChange(value);
-                      }}
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="With Static IP" id={`${idPrefix}-broadband-static`} />
-                          <Label htmlFor={`${idPrefix}-broadband-static`} className="text-xs cursor-pointer font-normal">
-                            With Static IP
-                          </Label>
+                    <div>
+                      <Label className="text-xs mb-2 block font-medium">IP Configuration</Label>
+                      <RadioGroup
+                        value={connectionTypes.find(ct => ct.type === 'Broadband (With/Without Static IP)')?.broadbandIPType || 'With Static IP'}
+                        onValueChange={(value: 'With Static IP' | 'Without Static IP') => {
+                          const newTypes = connectionTypes.map(ct => {
+                            if (ct.type === 'Broadband (With/Without Static IP)') {
+                              return { ...ct, broadbandIPType: value };
+                            }
+                            return ct;
+                          });
+                          onConnectionTypesChange(newTypes);
+                        }}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="With Static IP" id={`${idPrefix}-broadband-static`} />
+                            <Label htmlFor={`${idPrefix}-broadband-static`} className="text-xs cursor-pointer font-normal">
+                              With Static IP
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Without Static IP" id={`${idPrefix}-broadband-dynamic`} />
+                            <Label htmlFor={`${idPrefix}-broadband-dynamic`} className="text-xs cursor-pointer font-normal">
+                              Without Static IP
+                            </Label>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Without Static IP" id={`${idPrefix}-broadband-without-static`} />
-                          <Label htmlFor={`${idPrefix}-broadband-without-static`} className="text-xs cursor-pointer font-normal">
-                            Without Static IP
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
+                      </RadioGroup>
+                    </div>
                   </div>
                 )}
               </div>
 
-              {/* BSO - Fiber */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id={`${idPrefix}-BSO-Fiber`}
-                  checked={connectionTypes.some(ct => ct.type === 'BSO - Fiber')}
-                  onChange={(e) => handleTypeChange('BSO - Fiber', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                />
-                <Label htmlFor={`${idPrefix}-BSO-Fiber`} className="cursor-pointer text-sm">
-                  BSO - Fiber
-                </Label>
-              </div>
-
-              {/* BSO - Wireless */}
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id={`${idPrefix}-BSO-Wireless`}
-                  checked={connectionTypes.some(ct => ct.type === 'BSO - Wireless')}
-                  onChange={(e) => handleTypeChange('BSO - Wireless', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                />
-                <Label htmlFor={`${idPrefix}-BSO-Wireless`} className="cursor-pointer text-sm">
-                  BSO - Wireless
-                </Label>
-              </div>
-
-              {/* 3G/4G */}
+              {/* 4G/5G (Single/Dual Sim) */}
               <div className="space-y-2">
                 <div className="flex items-center space-x-2">
                   <input
                     type="checkbox"
-                    id={`${idPrefix}-3G4G`}
-                    checked={connectionTypes.some(ct => ct.type === '3G/4G')}
-                    onChange={(e) => handleTypeChange('3G/4G', e.target.checked, {
-                      simType: 'Single Sim'
-                    })}
+                    id={`${idPrefix}-4G5G`}
+                    checked={connectionTypes.some(ct => ct.type === '4G/5G (Single/Dual Sim)')}
+                    onChange={(e) => handleTypeChange('4G/5G (Single/Dual Sim)', e.target.checked)}
                     className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                   />
-                  <Label htmlFor={`${idPrefix}-3G4G`} className="cursor-pointer text-sm">
-                    3G/4G
+                  <Label htmlFor={`${idPrefix}-4G5G`} className="cursor-pointer text-sm">
+                    4G/5G
                   </Label>
                 </div>
 
-                {/* Sim Type for 3G/4G */}
-                {connectionTypes.some(ct => ct.type === '3G/4G') && (
+                {/* 4G/5G Sub-options */}
+                {connectionTypes.some(ct => ct.type === '4G/5G (Single/Dual Sim)') && (
                   <div className="ml-6 pl-3 border-l border-gray-200 space-y-2">
-                    <Label className="text-xs mb-2 block font-medium">Sim Type</Label>
-                    <RadioGroup
-                      value={connectionTypes.find(ct => ct.type === '3G/4G')?.simType || 'Single Sim'}
-                      onValueChange={(value: 'Single Sim' | 'Dual Sim') => {
-                        handleThreeGFourGSimTypeChange(value);
-                      }}
-                    >
-                      <div className="space-y-1.5">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Single Sim" id={`${idPrefix}-3g4g-single`} />
-                          <Label htmlFor={`${idPrefix}-3g4g-single`} className="text-xs cursor-pointer font-normal">
-                            Single Sim
-                          </Label>
+                    <div>
+                      <Label className="text-xs mb-2 block font-medium">SIM Configuration</Label>
+                      <RadioGroup
+                        value={connectionTypes.find(ct => ct.type === '4G/5G (Single/Dual Sim)')?.sim4G5GType || 'Single Sim'}
+                        onValueChange={(value: 'Single Sim' | 'Dual Sim') => {
+                          const newTypes = connectionTypes.map(ct => {
+                            if (ct.type === '4G/5G (Single/Dual Sim)') {
+                              return { ...ct, sim4G5GType: value };
+                            }
+                            return ct;
+                          });
+                          onConnectionTypesChange(newTypes);
+                        }}
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Single Sim" id={`${idPrefix}-4g5g-single`} />
+                            <Label htmlFor={`${idPrefix}-4g5g-single`} className="text-xs cursor-pointer font-normal">
+                              Single Sim
+                            </Label>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="Dual Sim" id={`${idPrefix}-4g5g-dual`} />
+                            <Label htmlFor={`${idPrefix}-4g5g-dual`} className="text-xs cursor-pointer font-normal">
+                              Dual Sim
+                            </Label>
+                          </div>
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="Dual Sim" id={`${idPrefix}-3g4g-dual`} />
-                          <Label htmlFor={`${idPrefix}-3g4g-dual`} className="text-xs cursor-pointer font-normal">
-                            Dual Sim
-                          </Label>
-                        </div>
-                      </div>
-                    </RadioGroup>
+                      </RadioGroup>
+                    </div>
                   </div>
                 )}
               </div>
@@ -1105,6 +1074,44 @@ export function LMTypeSelector({
                 <Label htmlFor={`${idPrefix}-VSAT`} className="cursor-pointer text-sm">
                   VSAT
                 </Label>
+              </div>
+
+              {/* Leased Line Fiber */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`${idPrefix}-LeasedLineFiber`}
+                    checked={connectionTypes.some(ct => ct.type === 'Leased Line Fiber')}
+                    onChange={(e) => handleTypeChange('Leased Line Fiber', e.target.checked, {
+                      serviceProviders: [],
+                      providerPreference: 'no-preference'
+                    })}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor={`${idPrefix}-LeasedLineFiber`} className="cursor-pointer text-sm">
+                    Leased Line Fiber
+                  </Label>
+                </div>
+              </div>
+
+              {/* Leased Line Wireless */}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id={`${idPrefix}-LeasedLineWireless`}
+                    checked={connectionTypes.some(ct => ct.type === 'Leased Line Wireless')}
+                    onChange={(e) => handleTypeChange('Leased Line Wireless', e.target.checked, {
+                      serviceProviders: [],
+                      providerPreference: 'no-preference'
+                    })}
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  />
+                  <Label htmlFor={`${idPrefix}-LeasedLineWireless`} className="cursor-pointer text-sm">
+                    Leased Line Wireless
+                  </Label>
+                </div>
               </div>
             </div>
           )}
