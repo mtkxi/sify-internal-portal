@@ -79,7 +79,7 @@ function Frame12() {
   return (
     <div className="content-stretch flex flex-col font-['Myriad_Pro:Regular',sans-serif] gap-[4px] items-start justify-center not-italic relative shrink-0 w-[80px]">
       <p className="leading-[16.5px] relative shrink-0 text-[#585e61] text-[11px] tracking-[0.1452px] w-full">Product</p>
-      <p className="leading-[22.5px] relative shrink-0 text-[#1e2122] text-[15px] tracking-[0.27px] w-full">DIA</p>
+      <p className="leading-[22.5px] relative shrink-0 text-[#1e2122] text-[15px] tracking-[0.27px] w-full">Express Connect</p>
     </div>
   );
 }

@@ -9,26 +9,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { Label } from './ui/label';
 import { ArrowLeft, Plus, AlertCircle, Filter, X } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import { Alert, AlertDescription } from './ui/alert';
 
 // Mock data for feasibility pool with product types
 const feasibilityPoolData = [
-  // DIA and MPLS entries (existing data)
+  // Express Connect and Site Connect entries (existing data)
   {
     id: "FID-2025-001",
-    product: "DIA",
+    product: "Express Connect",
     type: "New",
     location: "Mumbai DC-1",
     locationDetail: "Powai Data Center, Building A, Floor 3, Rack 15\\nLat: 19.1176, Long: 72.9060",
     connType: "Wireless",
     bandwidth: "22 Mbps",
     orderStatus: "",
-    endPoint: "A end" // Add endpoint for DIA/MPLS
+    endPoint: "A end" // Add endpoint for Express Connect/Site Connect
   },
   {
     id: "FID-2025-002",
-    product: "MPLS",
+    product: "Site Connect",
     type: "New",
     location: "Mumbai DC-1",
     locationDetail: "Powai Data Center, Building A, Floor 3, Rack 16\\nLat: 19.1176, Long: 72.9060",
@@ -39,7 +39,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-003",
-    product: "DIA",
+    product: "Express Connect",
     type: "Modify Bandwidth",
     location: "Bangalore DC-2",
     locationDetail: "Whitefield Data Center, Building B, Floor 2, Rack 8\\nLat: 12.9698, Long: 77.7499",
@@ -50,7 +50,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-004",
-    product: "MPLS",
+    product: "Site Connect",
     type: "New",
     location: "Delhi DC-3",
     locationDetail: "Connaught Place Data Center, Building C, Floor 1, Rack 22\\nLat: 28.6139, Long: 77.2090",
@@ -61,7 +61,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-005",
-    product: "DIA",
+    product: "Express Connect",
     type: "Modify Bandwidth",
     location: "Mumbai DC-1",
     locationDetail: "Powai Data Center, Building A, Floor 2, Rack 10\\nLat: 19.1176, Long: 72.9060",
@@ -193,7 +193,7 @@ const feasibilityPoolData = [
   // FID-2025-016 has 3 LM types, so it appears 3 times
   {
     id: "FID-2025-016",
-    product: "DIA",
+    product: "Express Connect",
     type: "New",
     location: "Navi Mumbai, Vashi",
     locationDetail: "Vashi Tech Park, Tower B, Floor 5\\nLat: 19.0688, Long: 72.9989",
@@ -204,7 +204,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-016", // Same FID
-    product: "DIA",
+    product: "Express Connect",
     type: "New",
     location: "Navi Mumbai, Vashi", // Same location
     locationDetail: "Vashi Tech Park, Tower B, Floor 5\\nLat: 19.0688, Long: 72.9989", // Same details
@@ -215,7 +215,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-016", // Same FID again
-    product: "DIA",
+    product: "Express Connect",
     type: "New",
     location: "Navi Mumbai, Vashi", // Same location
     locationDetail: "Vashi Tech Park, Tower B, Floor 5\\nLat: 19.0688, Long: 72.9989", // Same details
@@ -228,7 +228,7 @@ const feasibilityPoolData = [
   // FID-2025-017 has 2 LM types
   {
     id: "FID-2025-017",
-    product: "MPLS",
+    product: "Site Connect",
     type: "New",
     location: "Chennai, OMR",
     locationDetail: "OMR Tech Park, Building A, Floor 3\\nLat: 12.9121, Long: 80.2275",
@@ -239,7 +239,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-017", // Same FID
-    product: "MPLS",
+    product: "Site Connect",
     type: "New",
     location: "Chennai, OMR", // Same location
     locationDetail: "OMR Tech Park, Building A, Floor 3\\nLat: 12.9121, Long: 80.2275", // Same details
@@ -252,7 +252,7 @@ const feasibilityPoolData = [
   // MDAC (formerly Service Changes) entries
   {
     id: "FID-2025-SC001",
-    product: "DIA",
+    product: "Express Connect",
     type: "MDAC",
     changeType: "Address Change",
     location: "Mumbai, Andheri",
@@ -264,7 +264,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-SC002",
-    product: "DIA",
+    product: "Express Connect",
     type: "MDAC",
     changeType: "Bandwidth Change",
     location: "Pune, Hinjewadi",
@@ -276,7 +276,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-SC003",
-    product: "DIA",
+    product: "Express Connect",
     type: "MDAC",
     changeType: "LM Change",
     location: "Delhi, Connaught Place",
@@ -288,7 +288,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-SC004",
-    product: "MPLS",
+    product: "Site Connect",
     type: "MDAC",
     changeType: "Address Change",
     location: "Bangalore, Koramangala",
@@ -300,7 +300,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-SC005",
-    product: "MPLS",
+    product: "Site Connect",
     type: "MDAC",
     changeType: "Add Secondary/Tertiary Link",
     location: "Delhi, Nehru Place",
@@ -314,7 +314,7 @@ const feasibilityPoolData = [
   // FID-2025-018 has 2 LM types (Fiber and Jio)
   {
     id: "FID-2025-018",
-    product: "DIA",
+    product: "Express Connect",
     type: "Modify Bandwidth",
     location: "Pune, Hinjewadi",
     locationDetail: "Hinjewadi IT Park, Phase 2, Building D\\nLat: 18.5912, Long: 73.7389",
@@ -325,7 +325,7 @@ const feasibilityPoolData = [
   },
   {
     id: "FID-2025-018", // Same FID
-    product: "DIA",
+    product: "Express Connect",
     type: "Modify Bandwidth",
     location: "Pune, Hinjewadi", // Same location
     locationDetail: "Hinjewadi IT Park, Phase 2, Building D\\nLat: 18.5912, Long: 73.7389", // Same details
@@ -665,7 +665,7 @@ export function FeasibilityPool() {
                           <Checkbox
                             checked={isSelected}
                             disabled={isDisabled}
-                            onCheckedChange={(checked) => handleSelectFID(fid.id, checked as boolean)}
+                            onCheckedChange={(checked: boolean) => handleSelectFID(fid.id, checked)}
                           />
                         </TableCell>
                         <TableCell className="font-medium">{fid.id}</TableCell>
@@ -755,7 +755,7 @@ export function FeasibilityPool() {
                       <Checkbox
                         id={`product-${product}`}
                         checked={filters.products.includes(product)}
-                        onCheckedChange={(checked) => handleFilterChange('products', product, checked as boolean)}
+                        onCheckedChange={(checked: boolean) => handleFilterChange('products', product, checked)}
                       />
                       <label 
                         htmlFor={`product-${product}`}
@@ -777,7 +777,7 @@ export function FeasibilityPool() {
                       <Checkbox
                         id={`type-${type}`}
                         checked={filters.types.includes(type)}
-                        onCheckedChange={(checked) => handleFilterChange('types', type, checked as boolean)}
+                        onCheckedChange={(checked: boolean) => handleFilterChange('types', type, checked)}
                       />
                       <label 
                         htmlFor={`type-${type}`}
@@ -799,7 +799,7 @@ export function FeasibilityPool() {
                       <Checkbox
                         id={`location-${location}`}
                         checked={filters.locations.includes(location)}
-                        onCheckedChange={(checked) => handleFilterChange('locations', location, checked as boolean)}
+                        onCheckedChange={(checked: boolean) => handleFilterChange('locations', location, checked)}
                       />
                       <label 
                         htmlFor={`location-${location}`}
@@ -821,7 +821,7 @@ export function FeasibilityPool() {
                       <Checkbox
                         id={`connType-${connType}`}
                         checked={filters.connectionTypes.includes(connType)}
-                        onCheckedChange={(checked) => handleFilterChange('connectionTypes', connType, checked as boolean)}
+                        onCheckedChange={(checked: boolean) => handleFilterChange('connectionTypes', connType, checked)}
                       />
                       <label 
                         htmlFor={`connType-${connType}`}
@@ -843,7 +843,7 @@ export function FeasibilityPool() {
                       <Checkbox
                         id={`endPoint-${endPoint}`}
                         checked={filters.endPoints.includes(endPoint)}
-                        onCheckedChange={(checked) => handleFilterChange('endPoints', endPoint, checked as boolean)}
+                        onCheckedChange={(checked: boolean) => handleFilterChange('endPoints', endPoint, checked)}
                       />
                       <label 
                         htmlFor={`endPoint-${endPoint}`}
@@ -865,7 +865,7 @@ export function FeasibilityPool() {
                       <Checkbox
                         id={`status-${status}`}
                         checked={filters.orderStatus.includes(status)}
-                        onCheckedChange={(checked) => handleFilterChange('orderStatus', status, checked as boolean)}
+                        onCheckedChange={(checked: boolean) => handleFilterChange('orderStatus', status, checked)}
                       />
                       <label 
                         htmlFor={`status-${status}`}

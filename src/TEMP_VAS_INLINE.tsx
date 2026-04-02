@@ -1,5 +1,5 @@
-                      {/* Value Added Services (VAS) - For DIA/MPLS - Optional */}
-                      {(requirementInfo.product === 'DIA' || requirementInfo.product === 'MPLS') && (
+                      {/* Value Added Services (VAS) - For Express Connect/Site Connect - Optional */}
+                      {(requirementInfo.product === 'Express Connect' || requirementInfo.product === 'Site Connect') && (
                         <div>
                           <div className="flex items-center justify-between mb-4">
                             <div className="flex items-center gap-2">
@@ -16,8 +16,8 @@
                           
                           {/* Inline VAS Configuration */}
                           <div className="space-y-3">
-                            {/* Additional IP Card - Only for DIA */}
-                            {requirementInfo.product === 'DIA' && (
+                            {/* Additional IP Card - Only for Express Connect */}
+                            {requirementInfo.product === 'Express Connect' && (
                               <Collapsible open={ipSectionOpen} onOpenChange={setIpSectionOpen}>
                                 <Card className="border border-gray-200 shadow-none">
                                   <CollapsibleTrigger className="w-full">
@@ -78,7 +78,7 @@
                               </Collapsible>
                             )}
 
-                            {/* Devices and Managed Services Card - For both DIA and MPLS */}
+                            {/* Devices and Managed Services Card - For both Express Connect and Site Connect */}
                             <Collapsible open={devicesSectionOpen} onOpenChange={setDevicesSectionOpen}>
                               <Card className="border border-gray-200 shadow-none">
                                 <CollapsibleTrigger className="w-full">
@@ -464,8 +464,8 @@
                               </Card>
                             </Collapsible>
 
-                            {/* DDoS Protection Card - Only for DIA */}
-                            {requirementInfo.product === 'DIA' && (
+                            {/* DDoS Protection Card - Only for Express Connect */}
+                            {requirementInfo.product === 'Express Connect' && (
                               <Collapsible open={ddosSectionOpen} onOpenChange={setDdosSectionOpen}>
                                 <Card className="border border-gray-200 shadow-none">
                                   <CollapsibleTrigger className="w-full">

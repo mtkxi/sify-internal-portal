@@ -38,7 +38,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import {
   ArrowLeft,
   MapPin,
@@ -68,7 +68,7 @@ interface FIDConfiguration {
   serviceChangeType?: 'Address Change' | 'LM Change' | 'Bandwidth Change' | 'Add Secondary/Tertiary Link';
   linkId?: string; // For MDAC
   location: string;
-  connectionType: 'Wireless' | 'Fiber' | 'Fiber - Ethernet Drop' | 'Other ISP - Wireless' | 'Other ISP - Fiber' | 'Broadband - Internet' | 'Broadband - MPLS' | '4G LTE';
+  connectionType: 'Wireless' | 'Fiber' | 'Fiber - Ethernet Drop' | 'Other ISP - Wireless' | 'Other ISP - Fiber' | 'Broadband - Internet' | 'Broadband - Site Connect' | '4G LTE';
   serviceProvider?: string; // For "Other ISP" connections
   bandwidth: string;
   currentBandwidthValue: number; // numerical value for comparison
@@ -80,7 +80,7 @@ interface FIDConfiguration {
   isConfigured: boolean;
   isHub?: boolean;
   contractPeriod?: string; // For Add Secondary/Tertiary Link only
-  // QoS configuration for MPLS
+  // QoS configuration for Site Connect
   qosMode?: 'single' | 'split';
   qosSingle?: 'Bronze' | 'Gold' | 'Diamond' | '';
   qosSplit?: {
@@ -89,7 +89,7 @@ interface FIDConfiguration {
     diamond: number;
   };
   qosSplitUnit?: 'mbps' | 'percent';
-  // Secure Site Connect (SSC) fields for MPLS
+  // Secure Site Connect (SSC) fields for Site Connect
   isSecureSiteConnect?: boolean;
   lteLinkVariant?: 'ATM Single' | 'ATM Dual' | 'Branch Single' | 'Branch Dual';
   // Current link configuration (for MDAC only)
@@ -174,23 +174,23 @@ export function ConfigureProposalPage() {
 
   // State
   const [contractTerm, setContractTerm] = useState('3 years');
-  const [networkType, setNetworkType] = useState<'DIA' | 'MPLS'>(() => {
+  const [networkType, setNetworkType] = useState<'Express Connect' | 'Site Connect'>(() => {
     // First check if there's a saved networkType in stateData
     if (stateData?.networkType) {
       console.log('💾 Restoring networkType from saved state:', stateData.networkType);
       return stateData.networkType;
     }
-    // Initialize from lockedProduct if it exists, otherwise from networkProduct, otherwise default to MPLS
-    if (lockedProduct === 'DIA' || lockedProduct === 'MPLS') {
+    // Initialize from lockedProduct if it exists, otherwise from networkProduct, otherwise default to Site Connect
+    if (lockedProduct === 'Express Connect' || lockedProduct === 'Site Connect') {
       console.log('🔒 Setting networkType from lockedProduct:', lockedProduct);
       return lockedProduct;
     }
-    if (networkProduct === 'DIA' || networkProduct === 'MPLS') {
+    if (networkProduct === 'Express Connect' || networkProduct === 'Site Connect') {
       console.log('📦 Setting networkType from networkProduct:', networkProduct);
       return networkProduct;
     }
-    console.log('⚠️ Using default networkType: MPLS');
-    return 'MPLS';
+    console.log('⚠️ Using default networkType: Site Connect');
+    return 'Site Connect';
   });
   const [mplsType, setMplsType] = useState<'Mesh' | 'Hub & Spoke'>('Mesh');
   const [globalPlan, setGlobalPlan] = useState(() => {
@@ -198,7 +198,7 @@ export function ConfigureProposalPage() {
       console.log('💾 Restoring globalPlan from saved state:', stateData.globalPlan);
       return stateData.globalPlan;
     }
-    return 'Bronze'; // Set to Bronze for MPLS by default
+    return 'Bronze'; // Set to Bronze for Site Connect by default
   });
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [bulkConfigOpen, setBulkConfigOpen] = useState(false);
@@ -212,7 +212,7 @@ export function ConfigureProposalPage() {
   const [qosEditOpen, setQosEditOpen] = useState(false);
   const [editingQosFID, setEditingQosFID] = useState<string | null>(null);
   
-  // New MPLS QoS Configuration States
+  // New Site Connect QoS Configuration States
   const [qosDistributionMode, setQosDistributionMode] = useState<'uniform' | 'distributed'>(() => {
     if (stateData?.qosDistributionMode) {
       console.log('💾 Restoring qosDistributionMode from saved state:', stateData.qosDistributionMode);
@@ -234,7 +234,7 @@ export function ConfigureProposalPage() {
   const [pendingMode, setPendingMode] = useState<'uniform' | 'distributed' | null>(null);
   
   // Temporary QoS split config while in dialog (distributed mode only)
-  const [tempQosSplit, setTempQosSplit] = useState<{ bronze: number; gold: number; diamond: 0 }>({ bronze: 0, gold: 0, diamond: 0 });
+  const [tempQosSplit, setTempQosSplit] = useState<{ bronze: number; gold: number; diamond: number }>({ bronze: 0, gold: 0, diamond: 0 });
   
   // Bulk QoS states
   const [bulkQosMode, setBulkQosMode] = useState<'single' | 'split'>('single');
@@ -262,6 +262,7 @@ export function ConfigureProposalPage() {
   const [deviceManagement, setDeviceManagement] = useState<{ [key: string]: { configuration: boolean, hardware: boolean } }>({});
   const [managedServiceType, setManagedServiceType] = useState<'configuration' | 'configuration_hardware' | null>(null);
   const [serviceVariant, setServiceVariant] = useState<'bundled' | 'specific' | null>(null);
+  const [deviceOEMsByCount, setDeviceOEMsByCount] = useState<{ [key: string]: string[] }>({});
   
   // Additional IP states (LAN and WAN)
   const [lanIpOwner, setLanIpOwner] = useState<'sify' | 'customer' | ''>('');
@@ -277,13 +278,13 @@ export function ConfigureProposalPage() {
   const [portLinkType, setPortLinkType] = useState('Primary');
   const [portType, setPortType] = useState('Electrical Ethernet');
   const [portBandwidth, setPortBandwidth] = useState('1 Gbps');
-  // DIA-specific port details
+  // Express Connect-specific port details
   const [bandwidthType, setBandwidthType] = useState<'fixed' | 'burstable'>('fixed');
   const [burstOption, setBurstOption] = useState('');
   const [portTypeSize, setPortTypeSize] = useState('1G');
   const [sifyDnsCache, setSifyDnsCache] = useState(false);
   const [portRedundancy, setPortRedundancy] = useState(false);
-  // MPLS-specific port details
+  // Site Connect-specific port details
   const [ipType, setIpType] = useState('IPv4');
 
   // Fiber-specific Port Details
@@ -308,7 +309,7 @@ export function ConfigureProposalPage() {
   const [wirelessPortRedundancy, setWirelessPortRedundancy] = useState(false);
   const [wirelessIpType, setWirelessIpType] = useState('IPv4');
 
-  // Secure Site Connect (SSC) Port Details for MPLS
+  // Secure Site Connect (SSC) Port Details for Site Connect
   const [sscPortClassification, setSscPortClassification] = useState('Primary');
   const [sscPortBandwidth, setSscPortBandwidth] = useState('10');
   const [sscPortDetailsDialogOpen, setSscPortDetailsDialogOpen] = useState(false);
@@ -339,32 +340,57 @@ export function ConfigureProposalPage() {
 
   const linkTypeOptions = ['Primary', 'Secondary'];
   
-  // Device model options
-  const deviceModelOptions = {
-    Router: [
-      { value: 'Cisco ISR 4321', label: 'Cisco ISR 4321' },
-      { value: 'Cisco ISR 4331', label: 'Cisco ISR 4331' },
-      { value: 'HPE FlexNetwork MSR3000', label: 'HPE FlexNetwork MSR3000' },
-      { value: 'HPE FlexNetwork MSR4000', label: 'HPE FlexNetwork MSR4000' },
-      { value: 'Juniper SRX300', label: 'Juniper SRX300' },
-      { value: 'Juniper SRX320', label: 'Juniper SRX320' }
-    ],
-    Switch: [
-      { value: 'Aruba 2930F 48G', label: 'Aruba 2930F 48G' },
-      { value: 'Aruba 2930M 48G', label: 'Aruba 2930M 48G' },
-      { value: 'Cisco Catalyst 9300-48P', label: 'Cisco Catalyst 9300-48P' },
-      { value: 'Cisco Catalyst 9300-24P', label: 'Cisco Catalyst 9300-24P' },
-      { value: 'Fortinet FortiSwitch 448E', label: 'Fortinet FortiSwitch 448E' },
-      { value: 'Fortinet FortiSwitch 224E', label: 'Fortinet FortiSwitch 224E' }
-    ],
-    Firewall: [
-      { value: 'FortiGate 60F', label: 'FortiGate 60F (FortiCare Essential)' },
-      { value: 'FortiGate 80F', label: 'FortiGate 80F (FortiCare Premium)' },
-      { value: 'FortiGate 100F', label: 'FortiGate 100F (FortiCare Enterprise)' },
-      { value: 'FortiGate 200F', label: 'FortiGate 200F (FortiCare Elite)' },
-      { value: 'Palo Alto PA-220', label: 'Palo Alto PA-220' },
-      { value: 'Palo Alto PA-850', label: 'Palo Alto PA-850' }
-    ]
+  // Device model options organized by device type and OEM
+  const oemMapping = {
+    Router: ['Cisco', 'Fortinet', 'Cisco Meraki'],
+    Firewall: ['Fortinet'],
+    Switch: ['Aruba Wifi', 'Cisco', 'Fortinet', 'Cisco Meraki']
+  };
+
+  const deviceModelOptionsFull = {
+    Router: {
+      'Cisco': [
+        { value: 'ISR 1100 4P Dual GE SFP Router', label: 'ISR 1100 4P Dual GE SFP Router' },
+        { value: 'ISR 1100 8P Dual GE SFP WAN 8GB Router', label: 'ISR 1100 8P Dual GE SFP WAN 8GB Router' },
+        { value: 'Cisco Catalyst 8200L with 1-NIM slot and 4x1G WAN ports', label: 'Cisco Catalyst 8200L with 1-NIM slot and 4x1G WAN ports' },
+        { value: 'Cisco Catalyst C8200-1N-4T Router', label: 'Cisco Catalyst C8200-1N-4T Router' }
+      ],
+      'Fortinet': [
+        { value: 'Hardware plus 24x7 FortiCare', label: 'Hardware plus 24x7 FortiCare' },
+        { value: 'Hardware plus 24x7 FortiCare and FortiGuard Unified (UTM) Protection', label: 'Hardware plus 24x7 FortiCare and FortiGuard Unified (UTM) Protection' }
+      ],
+      'Cisco Meraki': [
+        { value: 'Meraki Z4 Hardware', label: 'Meraki Z4 Hardware' },
+        { value: 'Meraki Z4C Hardware', label: 'Meraki Z4C Hardware' },
+        { value: 'Meraki MX67 Router/Security Appliance', label: 'Meraki MX67 Router/Security Appliance' },
+        { value: 'Meraki MX67W Router/Security Appliance with 802.11ac', label: 'Meraki MX67W Router/Security Appliance with 802.11ac' },
+        { value: 'Meraki MX67C LTE Router/Security Appliance - Worldwide', label: 'Meraki MX67C LTE Router/Security Appliance - Worldwide' }
+      ]
+    },
+    Firewall: {
+      'Fortinet': [
+        { value: 'Hardware plus 24x7 FortiCare', label: 'Hardware plus 24x7 FortiCare' },
+        { value: 'Hardware plus 24x7 FortiCare and FortiGuard Unified (UTM) Protection', label: 'Hardware plus 24x7 FortiCare and FortiGuard Unified (UTM) Protection' }
+      ]
+    },
+    Switch: {
+      'Aruba Wifi': [
+        { value: 'Aruba 2930F 48G', label: 'Aruba 2930F 48G' },
+        { value: 'Aruba 2930M 48G', label: 'Aruba 2930M 48G' }
+      ],
+      'Cisco': [
+        { value: 'Cisco Catalyst 9300-48P', label: 'Cisco Catalyst 9300-48P' },
+        { value: 'Cisco Catalyst 9300-24P', label: 'Cisco Catalyst 9300-24P' }
+      ],
+      'Fortinet': [
+        { value: 'Fortinet FortiSwitch 448E', label: 'Fortinet FortiSwitch 448E' },
+        { value: 'Fortinet FortiSwitch 224E', label: 'Fortinet FortiSwitch 224E' }
+      ],
+      'Cisco Meraki': [
+        { value: 'Meraki MS120-24P', label: 'Meraki MS120-24P' },
+        { value: 'Meraki MS120-48P', label: 'Meraki MS120-48P' }
+      ]
+    }
   };
   
   // VAS structured by categories with proper grouping
@@ -479,18 +505,18 @@ export function ConfigureProposalPage() {
 
   // Helper function to check if FID is configured based on network type
   const isFIDConfigured = (fid: FIDConfiguration): boolean => {
-    const hasBasicConfig = fid.isConfigured || fid.plan || (fid.vas && fid.vas.length > 0);
+    const hasBasicConfig = !!(fid.isConfigured || fid.plan || (fid.vas && fid.vas.length > 0));
     
-    if (networkType === 'MPLS') {
+    if (networkType === 'Site Connect') {
       // For MPLS, also check if QoS is configured
       // In uniform mode, QoS is applied if uniformQoS is set
       // In distributed mode, check individual FID QoS
-      const hasQoS = qosDistributionMode === 'uniform' 
+      const hasQoS = !!(qosDistributionMode === 'uniform' 
         ? uniformQoS !== ''
-        : ((fid.qosMode === 'single' && fid.qosSingle) || 
+        : ((fid.qosMode === 'single' && !!fid.qosSingle) || 
            (fid.qosMode === 'split' && fid.qosSplit && 
-            ((fid.qosSplit.bronze || 0) + (fid.qosSplit.gold || 0) + (fid.qosSplit.diamond || 0)) > 0));
-      return hasBasicConfig && hasQoS;
+            ((fid.qosSplit.bronze || 0) + (fid.qosSplit.gold || 0) + (fid.qosSplit.diamond || 0)) > 0)));
+      return !!(hasBasicConfig && hasQoS);
     }
     
     return hasBasicConfig;
@@ -536,8 +562,8 @@ export function ConfigureProposalPage() {
       });
       
       // Deduplicate configs by FID
-      const uniqueConfigs = configs.filter((config, index, self) => 
-        index === self.findIndex((c) => c.fid === config.fid)
+      const uniqueConfigs = configs.filter((config: FIDConfiguration, index: number, self: FIDConfiguration[]) => 
+        index === self.findIndex((c: FIDConfiguration) => c.fid === config.fid)
       );
       
       console.log('Initialized configs:', uniqueConfigs);
@@ -973,7 +999,7 @@ export function ConfigureProposalPage() {
     }
 
     // QoS validation for MPLS
-    if (networkType === 'MPLS') {
+    if (networkType === 'Site Connect') {
       if (bulkQosMode === 'split') {
         const total = (bulkQosSplit.bronze || 0) + (bulkQosSplit.gold || 0) + (bulkQosSplit.diamond || 0);
         
@@ -1016,20 +1042,36 @@ export function ConfigureProposalPage() {
       updatedVAS.push(`IP: ${selectedIP}`);
     }
     
-    if (deviceOption === 'own' && selectedDeviceTypes.length > 0 && managedServiceType) {
-      const deviceDetails = selectedDeviceTypes.map(d => `${d} (${deviceCounts[d] || 1})`).join(', ');
-      const managementType = managedServiceType === 'configuration' ? 'Configuration Management' : 'Configuration & Hardware Management';
-      updatedVAS.push(`Managed Services (Own Device) - ${deviceDetails} - ${managementType}`);
+    if (deviceOption === 'own' && selectedDeviceTypes.length > 0) {
+      selectedDeviceTypes.forEach(device => {
+        const count = deviceCounts[device] || 1;
+        const management = deviceManagement[device];
+        if (management?.configuration || management?.hardware) {
+          const managementTypes = [];
+          if (management.configuration) managementTypes.push('Config');
+          if (management.hardware) managementTypes.push('Hardware');
+          updatedVAS.push(`Managed Services (Own Device) - ${device} (${count}) - ${managementTypes.join(' + ')}`);
+        }
+      });
     }
     
     if (deviceOption === 'buy' && selectedDeviceTypes.length > 0 && serviceVariant) {
       const deviceDetails = selectedDeviceTypes.map(d => {
-        const model = serviceVariant === 'specific' && deviceModels[d] ? ` ${deviceModels[d]}` : '';
-        return `${d}${model} (${deviceCounts[d] || 1})`;
+        const count = deviceCounts[d] || 1;
+        if (serviceVariant === 'specific') {
+          const models = deviceModelsByCount[d] || [];
+          const oems = deviceOEMsByCount[d] || [];
+          const modelStr = models.map((m, i) => {
+            const oem = oems[i] ? `${oems[i]} ` : '';
+            return m ? `${oem}${m}` : `Device ${i + 1}`;
+          }).join(', ');
+          
+          return `${d} [${modelStr}] (${count}) + Managed`;
+        }
+        return `${d} (${count}) + Managed`;
       }).join(', ');
       const variantType = serviceVariant === 'bundled' ? 'Bundled Package' : 'Specific Model';
-      const managedText = enableManagedService ? ' + Managed Service' : '';
-      updatedVAS.push(`Device Purchase - ${deviceDetails}${managedText} - ${variantType}`);
+      updatedVAS.push(`Device Purchase - ${deviceDetails} - ${variantType}`);
     }
     
     if (selectedDDoS) {
@@ -1047,7 +1089,7 @@ export function ConfigureProposalPage() {
           }
           
           // Apply QoS configuration for MPLS
-          if (networkType === 'MPLS') {
+          if (networkType === 'Site Connect') {
             if (bulkQosMode === 'single' && bulkQosSingle) {
               updated.qosMode = 'single';
               updated.qosSingle = bulkQosSingle;
@@ -1089,9 +1131,11 @@ export function ConfigureProposalPage() {
     setSelectedIP('');
     setDeviceOption(null);
     setSelectedDeviceTypes([]);
-    setDeviceCounts({});
-    setDeviceModels({});
+    setDeviceModelsByCount({});
+    setDeviceOEMsByCount({});
     setEnableManagedService(false);
+    setDeviceManagedService({});
+    setDeviceManagement({});
     setManagedServiceType(null);
     setServiceVariant(null);
     setSelectedDDoS('');
@@ -1109,8 +1153,8 @@ export function ConfigureProposalPage() {
   const handleSaveConfiguration = () => {
     // For DIA, no mandatory fields check - users can save with any configuration state
     
-    if (!hasPrimaryLink && networkType !== 'MPLS') {
-      toast.error(`At least one FID must have "Primary" ${networkType === 'DIA' ? 'port classification' : 'link type'} selected.`);
+    if (!hasPrimaryLink && networkType !== 'Site Connect') {
+      toast.error(`At least one FID must have "Primary" ${networkType === 'Express Connect' ? 'port classification' : 'link type'} selected.`);
       return;
     }
 
@@ -1429,10 +1473,10 @@ export function ConfigureProposalPage() {
                 </Label>
                 <Select 
                   value={networkType} 
-                  onValueChange={(value: 'DIA' | 'MPLS') => {
+                  onValueChange={(value: 'Express Connect' | 'Site Connect') => {
                     setNetworkType(value);
                     // Reset plan to default when network type changes
-                    setGlobalPlan(value === 'MPLS' ? 'Bronze' : 'Value');
+                    setGlobalPlan(value === 'Site Connect' ? 'Bronze' : 'Value');
                   }}
                   disabled={lockedProduct && isServiceChanges}
                 >
@@ -1449,7 +1493,7 @@ export function ConfigureProposalPage() {
                 </Select>
               </div>
               
-              {networkType === "MPLS" && !isServiceChanges && (
+              {networkType === "Site Connect" && !isServiceChanges && (
                 <div className="max-w-xs">
                   <Label htmlFor="mpls-type" className="text-gray-900 mb-2 block">
                     MPLS Type <span className="text-red-500">*</span>
@@ -1466,7 +1510,7 @@ export function ConfigureProposalPage() {
                 </div>
               )}
 
-              {networkType === 'DIA' && !isServiceChanges && (
+              {networkType === 'Express Connect' && !isServiceChanges && (
                 <div className="max-w-xs">
                   <Label htmlFor="global-plan" className="text-gray-900 mb-2 block">
                     Class of Service <span className="text-red-500">*</span>
@@ -1491,7 +1535,7 @@ export function ConfigureProposalPage() {
                 <>
                   <h4 className="text-sm text-gray-900 mb-4">Port Details</h4>
                   
-                  {networkType === 'DIA' ? (
+                  {networkType === 'Express Connect' ? (
                 <>
                   {/* First Row - DIA Port Details */}
                   <div className="flex items-start gap-6 flex-wrap">
@@ -1615,7 +1659,7 @@ export function ConfigureProposalPage() {
                       <Checkbox
                         id="sify-dns-cache"
                         checked={sifyDnsCache}
-                        onCheckedChange={(checked) => setSifyDnsCache(checked as boolean)}
+                        onCheckedChange={(checked: boolean) => setSifyDnsCache(checked as boolean)}
                       />
                       <Label
                         htmlFor="sify-dns-cache"
@@ -1629,7 +1673,7 @@ export function ConfigureProposalPage() {
                       <Checkbox
                         id="port-redundancy"
                         checked={portRedundancy}
-                        onCheckedChange={(checked) => setPortRedundancy(checked as boolean)}
+                        onCheckedChange={(checked: boolean) => setPortRedundancy(checked as boolean)}
                       />
                       <Label
                         htmlFor="port-redundancy"
@@ -1737,7 +1781,7 @@ export function ConfigureProposalPage() {
                         Port Details
                       </h4>
                       
-                      {networkType === 'DIA' ? (
+                      {networkType === 'Express Connect' ? (
                         <>
                           <div className="flex items-start gap-6 flex-wrap">
                             <div className="max-w-xs">
@@ -1859,7 +1903,7 @@ export function ConfigureProposalPage() {
                               <Checkbox
                                 id="fiber-sify-dns-cache"
                                 checked={fiberSifyDnsCache}
-                                onCheckedChange={(checked) => setFiberSifyDnsCache(checked as boolean)}
+                                onCheckedChange={(checked: boolean) => setFiberSifyDnsCache(checked as boolean)}
                               />
                               <Label
                                 htmlFor="fiber-sify-dns-cache"
@@ -1873,7 +1917,7 @@ export function ConfigureProposalPage() {
                               <Checkbox
                                 id="fiber-port-redundancy"
                                 checked={fiberPortRedundancy}
-                                onCheckedChange={(checked) => setFiberPortRedundancy(checked as boolean)}
+                                onCheckedChange={(checked: boolean) => setFiberPortRedundancy(checked as boolean)}
                               />
                               <Label
                                 htmlFor="fiber-port-redundancy"
@@ -1977,7 +2021,7 @@ export function ConfigureProposalPage() {
                         Port Details
                       </h4>
                       
-                      {networkType === 'DIA' ? (
+                      {networkType === 'Express Connect' ? (
                         <>
                           <div className="flex items-start gap-6 flex-wrap">
                             <div className="max-w-xs">
@@ -2099,7 +2143,7 @@ export function ConfigureProposalPage() {
                               <Checkbox
                                 id="wireless-sify-dns-cache"
                                 checked={wirelessSifyDnsCache}
-                                onCheckedChange={(checked) => setWirelessSifyDnsCache(checked as boolean)}
+                                onCheckedChange={(checked: boolean) => setWirelessSifyDnsCache(checked as boolean)}
                               />
                               <Label
                                 htmlFor="wireless-sify-dns-cache"
@@ -2113,7 +2157,7 @@ export function ConfigureProposalPage() {
                               <Checkbox
                                 id="wireless-port-redundancy"
                                 checked={wirelessPortRedundancy}
-                                onCheckedChange={(checked) => setWirelessPortRedundancy(checked as boolean)}
+                                onCheckedChange={(checked: boolean) => setWirelessPortRedundancy(checked as boolean)}
                               />
                               <Label
                                 htmlFor="wireless-port-redundancy"
@@ -2211,7 +2255,7 @@ export function ConfigureProposalPage() {
                     </div>
 
                     {/* Secure Site Connect Port Details - Only for MPLS with SSC FIDs and configured port details */}
-                    {networkType === 'MPLS' && fidConfigurations.some(f => f.isSecureSiteConnect) && hasSscPortDetails && (
+                    {networkType === 'Site Connect' && fidConfigurations.some(f => f.isSecureSiteConnect) && hasSscPortDetails && (
                       <div className="pt-6 border-t border-gray-200">
                         <h4 className="text-sm text-gray-900 mb-4 flex items-center gap-2">
                           <Badge variant="secondary" className="bg-amber-100 text-amber-700">Secure Site Connect</Badge>
@@ -2273,7 +2317,7 @@ export function ConfigureProposalPage() {
         </Card>
 
         {/* Warning if no primary link or no hub */}
-        {networkType === 'MPLS' && mplsType === 'Hub & Spoke' && !hubFid && (
+        {networkType === 'Site Connect' && mplsType === 'Hub & Spoke' && !hubFid && (
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
@@ -2285,13 +2329,13 @@ export function ConfigureProposalPage() {
             </CardContent>
           </Card>
         )}
-        {networkType !== 'MPLS' && !hasPrimaryLink && (
+        {networkType !== 'Site Connect' && !hasPrimaryLink && (
           <Card className="border-orange-200 bg-orange-50">
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
                 <AlertCircle className="w-5 h-5 text-orange-600" />
                 <p className="text-sm text-orange-800">
-                  <strong>Action Required:</strong> At least one FID must have "Primary" {networkType === 'DIA' ? 'port classification' : 'link type'} selected.
+                  <strong>Action Required:</strong> At least one FID must have "Primary" {networkType === 'Express Connect' ? 'port classification' : 'link type'} selected.
                 </p>
               </div>
             </CardContent>
@@ -2356,7 +2400,7 @@ export function ConfigureProposalPage() {
                 >
                   Add FID
                 </Button>
-                {networkType === 'MPLS' && (
+                {networkType === 'Site Connect' && (
                   <Button
                     variant="outline"
                     size="sm"
@@ -2389,7 +2433,7 @@ export function ConfigureProposalPage() {
             </div>
           </CardHeader>
           <CardContent>
-            {networkType === 'MPLS' && mplsType === 'Hub & Spoke' && !hubFid && (
+            {networkType === 'Site Connect' && mplsType === 'Hub & Spoke' && !hubFid && (
               <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
                 <AlertCircle className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                 <div>
@@ -2399,7 +2443,7 @@ export function ConfigureProposalPage() {
                 </div>
               </div>
             )}
-            {networkType === 'MPLS' && mplsType === 'Hub & Spoke' && hubFid && (
+            {networkType === 'Site Connect' && mplsType === 'Hub & Spoke' && hubFid && (
               <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg flex items-start gap-2">
                 <CheckCircle className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
                 <div>
@@ -2411,7 +2455,7 @@ export function ConfigureProposalPage() {
             )}
             
             {/* QoS Configuration Section - MPLS only */}
-            {networkType === 'MPLS' && (
+            {networkType === 'Site Connect' && (
               <Card className="mb-4 border-purple-200 bg-purple-50/30">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">QoS Configuration</CardTitle>
@@ -2601,7 +2645,7 @@ export function ConfigureProposalPage() {
                       <TableHead>FID</TableHead>
                       {isServiceChanges && <TableHead>Link ID</TableHead>}
                       {isServiceChanges && <TableHead>Change Type</TableHead>}
-                      {networkType === 'MPLS' && mplsType === 'Hub & Spoke' && !isServiceChanges && (
+                      {networkType === 'Site Connect' && mplsType === 'Hub & Spoke' && !isServiceChanges && (
                         <TableHead>
                           <TooltipProvider>
                             <Tooltip>
@@ -2633,14 +2677,14 @@ export function ConfigureProposalPage() {
                         <TableCell>
                           <Checkbox
                             checked={selectedRows.includes(fid.fid)}
-                            onCheckedChange={(checked) => handleRowSelection(fid.fid, checked as boolean)}
+                            onCheckedChange={(checked: boolean) => handleRowSelection(fid.fid, checked as boolean)}
                           />
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <span className="text-blue-600">{fid.fid}</span>
                             {/* SSC Badge */}
-                            {networkType === 'MPLS' && fid.isSecureSiteConnect && (
+                            {networkType === 'Site Connect' && fid.isSecureSiteConnect && (
                               <Badge variant="secondary" className="h-5 px-1.5 text-xs bg-amber-100 text-amber-700 border-amber-200">
                                 SSC
                               </Badge>
@@ -2660,7 +2704,7 @@ export function ConfigureProposalPage() {
                               </Tooltip>
                             </TooltipProvider>
                             {/* QoS Indicator for Distributed Mode */}
-                            {networkType === 'MPLS' && qosDistributionMode === 'distributed' && fid.qosMode === 'split' && fid.qosSplit && ((fid.qosSplit.bronze || 0) + (fid.qosSplit.gold || 0) + (fid.qosSplit.diamond || 0)) > 0 && (
+                            {networkType === 'Site Connect' && qosDistributionMode === 'distributed' && fid.qosMode === 'split' && fid.qosSplit && ((fid.qosSplit.bronze || 0) + (fid.qosSplit.gold || 0) + (fid.qosSplit.diamond || 0)) > 0 && (
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -2695,7 +2739,7 @@ export function ConfigureProposalPage() {
                                           <p><span className="font-medium text-gray-300">LM Type:</span> <span className="text-white">{fid.currentConnectionType || 'N/A'}</span></p>
                                           <p><span className="font-medium text-gray-300">Plan:</span> <span className="text-white">{fid.currentPlan || 'N/A'}</span></p>
                                           {/* Show MPLS Type and Hub/Spoke role for MPLS MDAC */}
-                                          {networkType === 'MPLS' && mplsType && (
+                                          {networkType === 'Site Connect' && mplsType && (
                                             <>
                                               <p><span className="font-medium text-gray-300">MPLS Type:</span> <span className="text-white">{mplsType}</span></p>
                                               {mplsType === 'Hub & Spoke' && (
@@ -2726,7 +2770,7 @@ export function ConfigureProposalPage() {
                             </Badge>
                           </TableCell>
                         )}
-                        {networkType === 'MPLS' && mplsType === 'Hub & Spoke' && !isServiceChanges && (
+                        {networkType === 'Site Connect' && mplsType === 'Hub & Spoke' && !isServiceChanges && (
                           <TableCell>
                             <TooltipProvider>
                               <Tooltip>
@@ -2734,7 +2778,7 @@ export function ConfigureProposalPage() {
                                   <div className="flex items-center">
                                     <Checkbox
                                       checked={fid.isHub === true}
-                                      onCheckedChange={(checked) => handleHubSelection(fid.fid, checked as boolean)}
+                                      onCheckedChange={(checked: boolean) => handleHubSelection(fid.fid, checked as boolean)}
                                       disabled={!canBeHub(fid) && !fid.isHub}
                                     />
                                   </div>
@@ -2778,11 +2822,11 @@ export function ConfigureProposalPage() {
                         <TableCell>
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
-                              {networkType === 'MPLS' && fid.isSecureSiteConnect ? (
+                              {networkType === 'Site Connect' && fid.isSecureSiteConnect ? (
                                 <>
                                   <Select
                                     value={fid.connectionType}
-                                    onValueChange={(value) => updateFIDField(fid.fid, 'connectionType', value as any)}
+                                    onValueChange={(value: string) => updateFIDField(fid.fid, 'connectionType', value as any)}
                                   >
                                     <SelectTrigger className="w-[140px]">
                                       <SelectValue />
@@ -2797,7 +2841,7 @@ export function ConfigureProposalPage() {
                                   {fid.connectionType === '4G LTE' && (
                                     <Select
                                       value={fid.lteLinkVariant || ''}
-                                      onValueChange={(value) => updateFIDField(fid.fid, 'lteLinkVariant', value as any)}
+                                      onValueChange={(value: string) => updateFIDField(fid.fid, 'lteLinkVariant', value as any)}
                                     >
                                       <SelectTrigger className="w-[120px]">
                                         <SelectValue placeholder="Select variant" />
@@ -2839,7 +2883,7 @@ export function ConfigureProposalPage() {
                               <>
                                 <Select
                                   value={fid.bandwidth || fid.currentBandwidth || ''}
-                                  onValueChange={(value) => updateFIDField(fid.fid, 'bandwidth', value)}
+                                  onValueChange={(value: string) => updateFIDField(fid.fid, 'bandwidth', value)}
                                 >
                                   <SelectTrigger className="w-[140px]">
                                     <SelectValue placeholder="Select bandwidth" />
@@ -2865,7 +2909,7 @@ export function ConfigureProposalPage() {
                             {fid.serviceChangeType === 'Add Secondary/Tertiary Link' ? (
                               <Select
                                 value={fid.contractPeriod || '3 years'}
-                                onValueChange={(value) => updateFIDField(fid.fid, 'contractPeriod', value)}
+                                onValueChange={(value: string) => updateFIDField(fid.fid, 'contractPeriod', value)}
                               >
                                 <SelectTrigger className="w-[180px]">
                                   <SelectValue placeholder="Select period" />
@@ -3006,7 +3050,7 @@ export function ConfigureProposalPage() {
         </Card>
 
         {/* Floating QoS Configuration Button for Distributed Mode */}
-        {networkType === 'MPLS' && qosDistributionMode === 'distributed' && selectedRows.length > 0 && (
+        {networkType === 'Site Connect' && qosDistributionMode === 'distributed' && selectedRows.length > 0 && (
           <div className="fixed bottom-8 right-8 z-50 animate-in slide-in-from-bottom-4">
             <div className="bg-white rounded-lg shadow-2xl border-2 border-purple-500 p-4">
               <div className="flex items-center gap-4">
@@ -3092,7 +3136,7 @@ export function ConfigureProposalPage() {
               <h3 className="text-gray-900">VAS Selection</h3>
               
               {/* Additional IP Card */}
-              {networkType === 'DIA' && (
+              {networkType === 'Express Connect' && (
               <Card>
                 <CardHeader 
                   className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -3298,7 +3342,7 @@ export function ConfigureProposalPage() {
                                         <Checkbox 
                                           id={`bulk-config-${device}`}
                                           checked={deviceManagement[device]?.configuration || false}
-                                          onCheckedChange={(checked) => {
+                                          onCheckedChange={(checked: boolean) => {
                                             setDeviceManagement({
                                               ...deviceManagement,
                                               [device]: {
@@ -3316,7 +3360,7 @@ export function ConfigureProposalPage() {
                                         <Checkbox 
                                           id={`bulk-hardware-${device}`}
                                           checked={deviceManagement[device]?.hardware || false}
-                                          onCheckedChange={(checked) => {
+                                          onCheckedChange={(checked: boolean) => {
                                             setDeviceManagement({
                                               ...deviceManagement,
                                               [device]: {
@@ -3355,7 +3399,14 @@ export function ConfigureProposalPage() {
                               className={`p-3 border rounded-lg cursor-pointer ${
                                 serviceVariant === 'bundled' ? 'border-gray-800 bg-white' : 'border-gray-200'
                               }`}
-                              onClick={() => setServiceVariant('bundled')}
+                              onClick={() => {
+                                setServiceVariant('bundled');
+                                // Requirement 1: Set 'Firewall' as auto-enabled by default for Bundled Package
+                                setSelectedDeviceTypes(['Firewall']);
+                                setDeviceCounts({'Firewall': 1});
+                                setDeviceModelsByCount({'Firewall': ['']});
+                                setDeviceManagedService({'Firewall': true});
+                              }}
                             >
                               <div className="flex items-center space-x-3">
                                 <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
@@ -3388,7 +3439,7 @@ export function ConfigureProposalPage() {
                         <div>
                           <Label className="text-gray-900 mb-3 block">Type of Device</Label>
                           <div className="flex flex-wrap gap-2">
-                            {['Firewall', 'Router', 'Switch'].map((device) => (
+                            {(serviceVariant === 'bundled' ? ['Firewall'] : ['Firewall', 'Router', 'Switch']).map((device) => (
                               <Button
                                 key={device}
                                 variant="outline"
@@ -3403,6 +3454,9 @@ export function ConfigureProposalPage() {
                                     const newModelsByCount = {...deviceModelsByCount};
                                     delete newModelsByCount[device];
                                     setDeviceModelsByCount(newModelsByCount);
+                                    const newOEMsByCount = {...deviceOEMsByCount};
+                                    delete newOEMsByCount[device];
+                                    setDeviceOEMsByCount(newOEMsByCount);
                                     const newManagedService = {...deviceManagedService};
                                     delete newManagedService[device];
                                     setDeviceManagedService(newManagedService);
@@ -3410,6 +3464,9 @@ export function ConfigureProposalPage() {
                                     setSelectedDeviceTypes([...selectedDeviceTypes, device]);
                                     setDeviceCounts({...deviceCounts, [device]: 1});
                                     setDeviceModelsByCount({...deviceModelsByCount, [device]: ['']});
+                                    setDeviceOEMsByCount({...deviceOEMsByCount, [device]: ['']});
+                                    // Requirement 4: Managed Service is Mandatory for 'Buy device'
+                                    setDeviceManagedService({...deviceManagedService, [device]: true});
                                   }
                                 }}
                               >
@@ -3471,48 +3528,79 @@ export function ConfigureProposalPage() {
                                       </Button>
                                     </div>
                                     {serviceVariant === 'specific' && (
-                                      <div className="space-y-2">
-                                        <Label className="text-xs text-gray-600 block">Models (Select for each device)</Label>
-                                        {Array.from({ length: count }).map((_, idx) => (
-                                          <div key={idx}>
-                                            <Label className="text-xs text-gray-500 mb-1 block">Model {idx + 1}</Label>
-                                            <Select
-                                              value={models[idx] || ''}
-                                              onValueChange={(value) => {
-                                                const newModels = [...models];
-                                                newModels[idx] = value;
-                                                setDeviceModelsByCount({...deviceModelsByCount, [device]: newModels});
-                                              }}
-                                            >
-                                              <SelectTrigger className="w-full">
-                                                <SelectValue placeholder="Select model" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                {deviceModelOptions[device as keyof typeof deviceModelOptions]?.map((model) => (
-                                                  <SelectItem key={model.value} value={model.value}>
-                                                    {model.label}
-                                                  </SelectItem>
-                                                ))}
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                        ))}
+                                      <div className="space-y-4">
+                                        <Label className="text-xs text-gray-600 block">Configuration (Per device)</Label>
+                                        {Array.from({ length: count }).map((_, idx) => {
+                                          const currentOEMs = deviceOEMsByCount[device] || [];
+                                          const currentOEM = currentOEMs[idx] || '';
+                                          const availableOEMs = oemMapping[device as keyof typeof oemMapping] || [];
+                                          
+                                          return (
+                                            <div key={idx} className="p-3 border border-gray-100 rounded-md bg-gray-50/50 space-y-3">
+                                              <p className="text-xs font-semibold text-gray-700">Device {idx + 1}</p>
+                                              
+                                              {/* OEM Selection */}
+                                              <div className="space-y-1.5">
+                                                <Label className="text-xs text-gray-500">OEM Type</Label>
+                                                <Select
+                                                  value={currentOEM}
+                                                  onValueChange={(value: string) => {
+                                                    const newOEMs = [...currentOEMs];
+                                                    newOEMs[idx] = value;
+                                                    setDeviceOEMsByCount({...deviceOEMsByCount, [device]: newOEMs});
+                                                    // Reset model when OEM changes
+                                                    const newModels = [...(deviceModelsByCount[device] || [])];
+                                                    newModels[idx] = '';
+                                                    setDeviceModelsByCount({...deviceModelsByCount, [device]: newModels});
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="w-full h-8 text-xs">
+                                                    <SelectValue placeholder="Select OEM" />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {availableOEMs.map((oem) => (
+                                                      <SelectItem key={oem} value={oem} className="text-xs">
+                                                        {oem}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+
+                                              {/* Model Selection - Filtered by OEM */}
+                                              <div className="space-y-1.5">
+                                                <Label className="text-xs text-gray-500">Model Selection</Label>
+                                                <Select
+                                                  value={models[idx] || ''}
+                                                  disabled={!currentOEM}
+                                                  onValueChange={(value: string) => {
+                                                    const newModels = [...models];
+                                                    newModels[idx] = value;
+                                                    setDeviceModelsByCount({...deviceModelsByCount, [device]: newModels});
+                                                  }}
+                                                >
+                                                  <SelectTrigger className="w-full h-8 text-xs">
+                                                    <SelectValue placeholder={currentOEM ? "Select model" : "Select OEM first"} />
+                                                  </SelectTrigger>
+                                                  <SelectContent>
+                                                    {currentOEM && deviceModelOptionsFull[device as keyof typeof deviceModelOptionsFull]?.[currentOEM as keyof (typeof deviceModelOptionsFull)[keyof typeof deviceModelOptionsFull]]?.map((model: any) => (
+                                                      <SelectItem key={model.value} value={model.value} className="text-xs">
+                                                        {model.label}
+                                                      </SelectItem>
+                                                    ))}
+                                                  </SelectContent>
+                                                </Select>
+                                              </div>
+                                            </div>
+                                          );
+                                        })}
                                       </div>
                                     )}
                                     <div className="pt-2 border-t border-gray-200">
                                       <div className="flex items-center space-x-2">
-                                        <Checkbox 
-                                          id={`bulk-managed-${device}`}
-                                          checked={deviceManagedService[device] || false}
-                                          onCheckedChange={(checked) => {
-                                            setDeviceManagedService({
-                                              ...deviceManagedService,
-                                              [device]: checked as boolean
-                                            });
-                                          }}
-                                        />
-                                        <Label htmlFor={`bulk-managed-${device}`} className="text-xs cursor-pointer text-gray-900">
-                                          Enable Managed Service
+                                        <CheckCircle className="w-4 h-4 text-green-600" />
+                                        <Label className="text-xs font-medium text-green-700">
+                                          Managed Services Added
                                         </Label>
                                       </div>
                                     </div>
@@ -3529,7 +3617,7 @@ export function ConfigureProposalPage() {
               </Card>
 
               {/* DDoS Protection Card - Only for DIA */}
-              {networkType === 'DIA' && (
+              {networkType === 'Express Connect' && (
               <Card>
                 <CardHeader 
                   className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -3624,7 +3712,7 @@ export function ConfigureProposalPage() {
               return (
                 <>
             {/* Additional IP Card - Only show for DIA and non-SSC */}
-            {networkType === 'DIA' && !isSSC && (
+            {networkType === 'Express Connect' && !isSSC && (
             <Card className="border border-gray-200 shadow-none">
               <CardHeader 
                 className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -3977,7 +4065,7 @@ export function ConfigureProposalPage() {
                                       <Checkbox 
                                         id={`sheet-config-${device}`}
                                         checked={deviceManagement[device]?.configuration || false}
-                                        onCheckedChange={(checked) => {
+                                        onCheckedChange={(checked: boolean) => {
                                           setDeviceManagement({
                                             ...deviceManagement,
                                             [device]: {
@@ -3995,7 +4083,7 @@ export function ConfigureProposalPage() {
                                       <Checkbox 
                                         id={`sheet-hardware-${device}`}
                                         checked={deviceManagement[device]?.hardware || false}
-                                        onCheckedChange={(checked) => {
+                                        onCheckedChange={(checked: boolean) => {
                                           setDeviceManagement({
                                             ...deviceManagement,
                                             [device]: {
@@ -4034,7 +4122,14 @@ export function ConfigureProposalPage() {
                             className={`p-3 border rounded-lg cursor-pointer ${
                               serviceVariant === 'bundled' ? 'border-gray-800 bg-white' : 'border-gray-200'
                             }`}
-                            onClick={() => setServiceVariant('bundled')}
+                            onClick={() => {
+                              setServiceVariant('bundled');
+                              // Requirement 1: Set 'Firewall' as auto-enabled by default for Bundled Package
+                              setSelectedDeviceTypes(['Firewall']);
+                              setDeviceCounts({'Firewall': 1});
+                              setDeviceModelsByCount({'Firewall': ['']});
+                              setDeviceManagedService({'Firewall': true});
+                            }}
                           >
                             <div className="flex items-center space-x-3">
                               <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${
@@ -4067,7 +4162,7 @@ export function ConfigureProposalPage() {
                       <div>
                         <Label className="text-gray-900 mb-3 block">Type of Device</Label>
                         <div className="flex flex-wrap gap-2">
-                          {['Firewall', 'Router', 'Switch'].map((device) => (
+                          {(serviceVariant === 'bundled' ? ['Firewall'] : ['Firewall', 'Router', 'Switch']).map((device) => (
                             <Button
                               key={device}
                               variant="outline"
@@ -4075,6 +4170,8 @@ export function ConfigureProposalPage() {
                               className={selectedDeviceTypes.includes(device) ? 'bg-gray-700 text-white hover:bg-gray-700 hover:text-white' : ''}
                               onClick={() => {
                                 if (selectedDeviceTypes.includes(device)) {
+                                  // For bundled, we set it as auto-enabled, so maybe we shouldn't allow removing it if it's the only one?
+                                  // But let's follow standard toggle logic for now unless specified otherwise.
                                   setSelectedDeviceTypes(selectedDeviceTypes.filter(d => d !== device));
                                   const newCounts = {...deviceCounts};
                                   delete newCounts[device];
@@ -4082,6 +4179,9 @@ export function ConfigureProposalPage() {
                                   const newModelsByCount = {...deviceModelsByCount};
                                   delete newModelsByCount[device];
                                   setDeviceModelsByCount(newModelsByCount);
+                                  const newOEMsByCount = {...deviceOEMsByCount};
+                                  delete newOEMsByCount[device];
+                                  setDeviceOEMsByCount(newOEMsByCount);
                                   const newManagedService = {...deviceManagedService};
                                   delete newManagedService[device];
                                   setDeviceManagedService(newManagedService);
@@ -4089,6 +4189,9 @@ export function ConfigureProposalPage() {
                                   setSelectedDeviceTypes([...selectedDeviceTypes, device]);
                                   setDeviceCounts({...deviceCounts, [device]: 1});
                                   setDeviceModelsByCount({...deviceModelsByCount, [device]: ['']});
+                                  setDeviceOEMsByCount({...deviceOEMsByCount, [device]: ['']});
+                                  // Requirement 4: Managed Service is Mandatory for 'Buy device'
+                                  setDeviceManagedService({...deviceManagedService, [device]: true});
                                 }
                               }}
                             >
@@ -4150,48 +4253,79 @@ export function ConfigureProposalPage() {
                                     </Button>
                                   </div>
                                   {serviceVariant === 'specific' && (
-                                    <div className="space-y-2">
-                                      <Label className="text-xs text-gray-600 block">Models (Select for each device)</Label>
-                                      {Array.from({ length: count }).map((_, idx) => (
-                                        <div key={idx}>
-                                          <Label className="text-xs text-gray-500 mb-1 block">Model {idx + 1}</Label>
-                                          <Select
-                                            value={models[idx] || ''}
-                                            onValueChange={(value) => {
-                                              const newModels = [...models];
-                                              newModels[idx] = value;
-                                              setDeviceModelsByCount({...deviceModelsByCount, [device]: newModels});
-                                            }}
-                                          >
-                                            <SelectTrigger className="w-full">
-                                              <SelectValue placeholder="Select model" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                              {deviceModelOptions[device as keyof typeof deviceModelOptions]?.map((model) => (
-                                                <SelectItem key={model.value} value={model.value}>
-                                                  {model.label}
-                                                </SelectItem>
-                                              ))}
-                                            </SelectContent>
-                                          </Select>
-                                        </div>
-                                      ))}
+                                    <div className="space-y-4">
+                                      <Label className="text-xs text-gray-600 block">Configuration (Per device)</Label>
+                                      {Array.from({ length: count }).map((_, idx) => {
+                                        const currentOEMs = deviceOEMsByCount[device] || [];
+                                        const currentOEM = currentOEMs[idx] || '';
+                                        const availableOEMs = oemMapping[device as keyof typeof oemMapping] || [];
+                                        
+                                        return (
+                                          <div key={idx} className="p-3 border border-gray-100 rounded-md bg-gray-50/50 space-y-3">
+                                            <p className="text-xs font-semibold text-gray-700">Device {idx + 1}</p>
+                                            
+                                            {/* OEM Selection */}
+                                            <div className="space-y-1.5">
+                                              <Label className="text-xs text-gray-500">OEM Type</Label>
+                                              <Select
+                                                value={currentOEM}
+                                                onValueChange={(value: string) => {
+                                                  const newOEMs = [...currentOEMs];
+                                                  newOEMs[idx] = value;
+                                                  setDeviceOEMsByCount({...deviceOEMsByCount, [device]: newOEMs});
+                                                  // Reset model when OEM changes
+                                                  const newModels = [...(deviceModelsByCount[device] || [])];
+                                                  newModels[idx] = '';
+                                                  setDeviceModelsByCount({...deviceModelsByCount, [device]: newModels});
+                                                }}
+                                              >
+                                                <SelectTrigger className="w-full h-8 text-xs">
+                                                  <SelectValue placeholder="Select OEM" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {availableOEMs.map((oem) => (
+                                                    <SelectItem key={oem} value={oem} className="text-xs">
+                                                      {oem}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+
+                                            {/* Model Selection - Filtered by OEM */}
+                                            <div className="space-y-1.5">
+                                              <Label className="text-xs text-gray-500">Model Selection</Label>
+                                              <Select
+                                                value={models[idx] || ''}
+                                                disabled={!currentOEM}
+                                                onValueChange={(value: string) => {
+                                                  const newModels = [...models];
+                                                  newModels[idx] = value;
+                                                  setDeviceModelsByCount({...deviceModelsByCount, [device]: newModels});
+                                                }}
+                                              >
+                                                <SelectTrigger className="w-full h-8 text-xs">
+                                                  <SelectValue placeholder={currentOEM ? "Select model" : "Select OEM first"} />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                  {currentOEM && deviceModelOptionsFull[device as keyof typeof deviceModelOptionsFull]?.[currentOEM as keyof (typeof deviceModelOptionsFull)[keyof typeof deviceModelOptionsFull]]?.map((model: any) => (
+                                                    <SelectItem key={model.value} value={model.value} className="text-xs">
+                                                      {model.label}
+                                                    </SelectItem>
+                                                  ))}
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                   <div className="pt-2 border-t border-gray-200">
                                     <div className="flex items-center space-x-2">
-                                      <Checkbox 
-                                        id={`sheet-managed-${device}`}
-                                        checked={deviceManagedService[device] || false}
-                                        onCheckedChange={(checked) => {
-                                          setDeviceManagedService({
-                                            ...deviceManagedService,
-                                            [device]: checked as boolean
-                                          });
-                                        }}
-                                      />
-                                      <Label htmlFor={`sheet-managed-${device}`} className="text-xs cursor-pointer text-gray-900">
-                                        Enable Managed Service
+                                      <CheckCircle className="w-4 h-4 text-green-600" />
+                                      <Label className="text-xs font-medium text-green-700">
+                                        Managed Services Added
                                       </Label>
                                     </div>
                                   </div>
@@ -4208,7 +4342,7 @@ export function ConfigureProposalPage() {
             </Card>
 
             {/* DDoS Protection Card - Only show for DIA */}
-            {networkType === 'DIA' && (
+            {networkType === 'Express Connect' && (
             <Card className="border border-gray-200 shadow-none">
               <CardHeader 
                 className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -4314,8 +4448,8 @@ export function ConfigureProposalPage() {
                 setDeviceOption(null);
                 setSelectedDeviceTypes([]);
                 setDeviceCounts({});
-                setDeviceModels({});
                 setDeviceModelsByCount({});
+                setDeviceOEMsByCount({});
                 setEnableManagedService(false);
                 setDeviceManagedService({});
                 setDeviceManagement({});
@@ -4398,15 +4532,17 @@ export function ConfigureProposalPage() {
                   if (deviceOption === 'buy' && selectedDeviceTypes.length > 0 && serviceVariant) {
                     const deviceDetails = selectedDeviceTypes.map(d => {
                       const count = deviceCounts[d] || 1;
-                      const managedSuffix = deviceManagedService[d] ? ' + Managed' : '';
                       if (serviceVariant === 'specific') {
                         const models = deviceModelsByCount[d] || [];
-                        const modelStr = models.filter(m => m).length > 0 
-                          ? ` [${models.map((m, i) => m || `Model ${i + 1}`).join(', ')}]` 
-                          : '';
-                        return `${d}${modelStr} (${count})${managedSuffix}`;
+                        const oems = deviceOEMsByCount[d] || [];
+                        const modelStr = models.map((m, i) => {
+                          const oem = oems[i] ? `${oems[i]} ` : '';
+                          return m ? `${oem}${m}` : `Device ${i + 1}`;
+                        }).join(', ');
+                        
+                        return `${d} [${modelStr}] (${count}) + Managed`;
                       }
-                      return `${d} (${count})${managedSuffix}`;
+                      return `${d} (${count}) + Managed`;
                     }).join(', ');
                     const variantType = serviceVariant === 'bundled' ? 'Bundled Package' : 'Specific Model';
                     updatedVAS.push(`Device Purchase - ${deviceDetails} - ${variantType}`);
@@ -4434,8 +4570,8 @@ export function ConfigureProposalPage() {
                 setDeviceOption(null);
                 setSelectedDeviceTypes([]);
                 setDeviceCounts({});
-                setDeviceModels({});
                 setDeviceModelsByCount({});
+                setDeviceOEMsByCount({});
                 setEnableManagedService(false);
                 setDeviceManagedService({});
                 setDeviceManagement({});
@@ -5129,7 +5265,7 @@ export function ConfigureProposalPage() {
                     </Label>
                     <Select 
                       value={currentEditingPortDetails.portClassification || 'Primary'}
-                      onValueChange={(value) => {
+                      onValueChange={(value: string) => {
                         const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                         if (updatedFid) {
                           updateFIDField(editingPortFID, 'portDetails', {
@@ -5156,7 +5292,7 @@ export function ConfigureProposalPage() {
                     </Label>
                     <Select 
                       value={currentEditingPortDetails.handoffType || 'Electrical Ethernet'}
-                      onValueChange={(value) => {
+                      onValueChange={(value: string) => {
                         const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                         if (updatedFid) {
                           updateFIDField(editingPortFID, 'portDetails', {
@@ -5183,7 +5319,7 @@ export function ConfigureProposalPage() {
                     </Label>
                     <Select 
                       value={currentEditingPortDetails.portBandwidth || '1 Gbps'}
-                      onValueChange={(value) => {
+                      onValueChange={(value: string) => {
                         const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                         if (updatedFid) {
                           updateFIDField(editingPortFID, 'portDetails', {
@@ -5206,7 +5342,7 @@ export function ConfigureProposalPage() {
                     </Select>
                   </div>
 
-                  {networkType === 'DIA' && (() => {
+                  {networkType === 'Express Connect' && (() => {
                     const editingFid = fidConfigurations.find(f => f.fid === editingPortFID);
                     const isBurstableEligible = editingFid && (
                       editingFid.location.includes('Sify DC') || 
@@ -5254,14 +5390,14 @@ export function ConfigureProposalPage() {
                     );
                   })()}
 
-                  {networkType === 'DIA' && currentEditingPortDetails.bandwidthType === 'burstable' && (
+                  {networkType === 'Express Connect' && currentEditingPortDetails.bandwidthType === 'burstable' && (
                     <div>
                       <Label htmlFor="burst-option" className="text-gray-900 mb-2 block">
                         Burst Option
                       </Label>
                       <Select 
                         value={currentEditingPortDetails.burstOption || ''}
-                        onValueChange={(value) => {
+                        onValueChange={(value: string) => {
                           const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                           if (updatedFid) {
                             updateFIDField(editingPortFID, 'portDetails', {
@@ -5289,7 +5425,7 @@ export function ConfigureProposalPage() {
                     </Label>
                     <Select 
                       value={currentEditingPortDetails.portType || '1G'}
-                      onValueChange={(value) => {
+                      onValueChange={(value: string) => {
                         const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                         if (updatedFid) {
                           updateFIDField(editingPortFID, 'portDetails', {
@@ -5309,14 +5445,14 @@ export function ConfigureProposalPage() {
                     </Select>
                   </div>
 
-                  {networkType === 'MPLS' && (
+                  {networkType === 'Site Connect' && (
                     <div>
                       <Label htmlFor="ip-type" className="text-gray-900 mb-2 block">
                         IP Type
                       </Label>
                       <Select 
                         value={currentEditingPortDetails.ipType || 'IPv4'}
-                        onValueChange={(value) => {
+                        onValueChange={(value: string) => {
                           const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                           if (updatedFid) {
                             updateFIDField(editingPortFID, 'portDetails', {
@@ -5344,7 +5480,7 @@ export function ConfigureProposalPage() {
                     <Checkbox
                       id="sify-dns-cache-dialog"
                       checked={currentEditingPortDetails.sifyDnsCache || false}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={(checked: boolean) => {
                         const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                         if (updatedFid) {
                           updateFIDField(editingPortFID, 'portDetails', {
@@ -5366,7 +5502,7 @@ export function ConfigureProposalPage() {
                     <Checkbox
                       id="port-redundancy-dialog"
                       checked={currentEditingPortDetails.portRedundancy || false}
-                      onCheckedChange={(checked) => {
+                      onCheckedChange={(checked: boolean) => {
                         const updatedFid = fidConfigurations.find(f => f.fid === editingPortFID);
                         if (updatedFid) {
                           updateFIDField(editingPortFID, 'portDetails', {

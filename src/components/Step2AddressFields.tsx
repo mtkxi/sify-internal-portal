@@ -105,7 +105,7 @@ export function Step2AddressFields({
           {/* Rack, Floor, Block/Tower Details for Sify DC */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label>Rack Details *</Label>
+              <Label>Rack Details</Label>
               <Input
                 placeholder="e.g., Rack 12"
                 value={currentConnection.rackDetails || ''}
@@ -113,7 +113,7 @@ export function Step2AddressFields({
               />
             </div>
             <div>
-              <Label>Floor Details *</Label>
+              <Label>Floor Details</Label>
               <Input
                 placeholder="e.g., Floor 3"
                 value={currentConnection.floorDetails || ''}
@@ -277,7 +277,7 @@ export function Step2AddressFields({
           {/* Rack, Floor, Block/Tower Details for Connected DC */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <Label>Rack Details *</Label>
+              <Label>Rack Details</Label>
               <Input
                 placeholder="e.g., Rack 12"
                 value={currentConnection.rackDetails || ''}
@@ -285,7 +285,7 @@ export function Step2AddressFields({
               />
             </div>
             <div>
-              <Label>Floor Details *</Label>
+              <Label>Floor Details</Label>
               <Input
                 placeholder="e.g., Floor 3"
                 value={currentConnection.floorDetails || ''}

@@ -50,7 +50,7 @@ const requirementData = {
   addedDate: '2024-01-10',
   requirementDescription: 'Default requirement description for testing.',
   productType: 'Network',
-  subProduct: 'DIA',
+  subProduct: 'Express Connect',
   // Request Details
   opportunityId: 'OPP-2024-000',
   opportunityName: 'Default Opportunity',

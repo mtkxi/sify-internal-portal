@@ -60,7 +60,7 @@ interface FIDLineItem {
   minARC: number;
   otcMargin: number;
   arcMargin: number;
-  // QoS configuration for MPLS
+  // QoS configuration for Site Connect
   qosMode?: 'single' | 'split';
   qosSingle?: 'Bronze' | 'Gold' | 'Diamond';
   qosSplit?: {
@@ -94,7 +94,7 @@ export function ProposalPricingManagement() {
   const { proposalId, company, networkProduct, networkType: receivedNetworkType, opportunityId, fidConfigurations } = location.state || {};
   
   // Determine network type from state or networkProduct
-  const networkType = receivedNetworkType || (networkProduct?.includes('MPLS') ? 'MPLS' : 'DIA');
+  const networkType = receivedNetworkType || (networkProduct?.includes('Site Connect') ? 'Site Connect' : 'Express Connect');
 
   const MIN_MARGIN_PERCENTAGE = 15;
   const REFERENCE_PRICING = {
@@ -195,9 +195,9 @@ export function ProposalPricingManagement() {
       const propOTC = config.connectionType === 'Fiber' ? corePropOTC : mainRefOTC;
       const propARC = config.connectionType === 'Fiber' ? corePropARC : mainRefARC;
       
-      // For MPLS networks, add QoS pricing breakdown
+      // For Site Connect networks, add QoS pricing breakdown
       let qosConfig = {};
-      if (networkType === 'MPLS' && config.itemType !== 'VAS') {
+      if (networkType === 'Site Connect' && config.itemType !== 'VAS') {
         // Alternate between uniform and distributed QoS for demo
         if (config.fid === 'FID-2025-001') {
           // Uniform QoS (single tier)
@@ -485,17 +485,17 @@ export function ProposalPricingManagement() {
     }, 1000);
   };
 
-  // Helper function to render ARC cells with QoS breakdown for MPLS
+  // Helper function to render ARC cells with QoS breakdown for Site Connect
   const renderARCCell = (item: FIDLineItem, type: 'reference' | 'proposed') => {
     const arc = type === 'reference' ? item.referenceARC : item.proposedARC;
     const qosBreakdown = type === 'reference' ? item.qosReferenceARC : item.qosProposedARC;
 
-    // For DIA networks or VAS items, just show the value
-    if (networkType !== 'MPLS' || !qosBreakdown || item.itemType === 'VAS') {
+    // For Express Connect networks or VAS items, just show the value
+    if (networkType !== 'Site Connect' || !qosBreakdown || item.itemType === 'VAS') {
       return <span className="text-gray-900">{arc.toLocaleString()}</span>;
     }
 
-    // For MPLS networks with QoS, show tooltip with breakdown
+    // For Site Connect networks with QoS, show tooltip with breakdown
     return (
       <TooltipProvider>
         <Tooltip>
@@ -588,7 +588,7 @@ export function ProposalPricingManagement() {
                   <Badge 
                     variant="outline" 
                     className={`text-sm px-3 py-1 ${
-                      networkType === 'MPLS' 
+                      networkType === 'Site Connect' 
                         ? 'bg-purple-100 text-purple-700 border-purple-300' 
                         : 'bg-blue-100 text-blue-700 border-blue-300'
                     }`}

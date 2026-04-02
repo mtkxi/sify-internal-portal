@@ -127,7 +127,7 @@ export function ProposalDetails() {
   const proposalData = {
     proposalId: proposalId || 'PROP-2025-001',
     type: 'New',
-    productType: networkProduct || 'DIA (Dedicated Internet Access)',
+    productType: networkProduct || 'Express Connect (Dedicated Internet Access)',
     totalFids: fids?.length || 3,
     createdOn: '2025-02-04',
     contractTerm: '36 months',
@@ -238,7 +238,7 @@ export function ProposalDetails() {
   // Mock order details
   const mockOrderDetails: OrderDetails = {
     orderId: 'ORD-2025-001',
-    connectionType: 'DIA',
+    connectionType: 'Express Connect',
     proposalId: proposalData.proposalId,
     orderType: 'New Connection',
     contractTerm: '36 months',
@@ -632,7 +632,7 @@ export function ProposalDetails() {
                             />
                           </TableHead>
                           <TableHead>FID</TableHead>
-                          {proposalData.productType.includes('MPLS') && (
+                          {proposalData.productType.includes('Site Connect') && (
                             <TableHead>Type</TableHead>
                           )}
                           <TableHead>Location</TableHead>
@@ -663,7 +663,7 @@ export function ProposalDetails() {
                             <TableCell>
                               <span className="text-blue-600">{fid.fid}</span>
                             </TableCell>
-                            {proposalData.productType.includes('MPLS') && (
+                            {proposalData.productType.includes('Site Connect') && (
                               <TableCell>
                                 <Badge 
                                   variant="outline" 

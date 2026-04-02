@@ -42,9 +42,9 @@ const mockInventoryData = {
       monthlySpend: 450000,
     },
     network: {
-      dia: [
+      expressConnect: [
         {
-          linkId: 'LINK-DIA-001',
+          linkId: 'LINK-EXPRESS-CONNECT-001',
           location: 'Mumbai Office, Maharashtra',
           bandwidth: '100 Mbps',
           lmType: 'Fiber',
@@ -53,7 +53,7 @@ const mockInventoryData = {
           plan: 'Standard',
         },
         {
-          linkId: 'LINK-DIA-002',
+          linkId: 'LINK-EXPRESS-CONNECT-002',
           location: 'Pune Branch, Maharashtra',
           bandwidth: '50 Mbps',
           lmType: 'Wireless',
@@ -62,7 +62,7 @@ const mockInventoryData = {
           plan: 'Standard',
         },
         {
-          linkId: 'LINK-DIA-003',
+          linkId: 'LINK-EXPRESS-CONNECT-003',
           location: 'Bangalore Office, Karnataka',
           bandwidth: '200 Mbps',
           lmType: 'Fiber',
@@ -71,9 +71,9 @@ const mockInventoryData = {
           plan: 'Premium',
         },
       ],
-      mpls: [
+      siteConnect: [
         {
-          linkId: 'LINK-MPLS-001',
+          linkId: 'LINK-SITE-CONNECT-001',
           location: 'Mumbai HQ, Maharashtra',
           bandwidth: '1 Gbps',
           lmType: 'Fiber',
@@ -82,7 +82,7 @@ const mockInventoryData = {
           expiryDate: '2025-03-10',
         },
         {
-          linkId: 'LINK-MPLS-002',
+          linkId: 'LINK-SITE-CONNECT-002',
           location: 'Delhi Office, Delhi',
           bandwidth: '500 Mbps',
           lmType: 'Fiber',
@@ -137,9 +137,9 @@ const mockInventoryData = {
       monthlySpend: 320000,
     },
     network: {
-      dia: [
+      expressConnect: [
         {
-          linkId: 'LINK-DIA-101',
+          linkId: 'LINK-EXPRESS-CONNECT-101',
           location: 'Mumbai Branch, Maharashtra',
           bandwidth: '200 Mbps',
           lmType: 'Fiber',
@@ -148,9 +148,9 @@ const mockInventoryData = {
           plan: 'Premium',
         },
       ],
-      mpls: [
+      siteConnect: [
         {
-          linkId: 'LINK-MPLS-101',
+          linkId: 'LINK-SITE-CONNECT-101',
           location: 'Mumbai HQ, Maharashtra',
           bandwidth: '1 Gbps',
           lmType: 'Fiber',
@@ -320,10 +320,10 @@ export function InventoryPage() {
                       </div>
                       <h3 className="text-gray-900 font-medium">Sify Network</h3>
                     </div>
-                    <p className="text-sm text-gray-600">DIA, MPLS, P2P connections</p>
+                    <p className="text-sm text-gray-600">Express Connect, Site Connect, P2P connections</p>
                     <div className="mt-3 flex items-center space-x-2">
                       <Badge variant="secondary" className="text-xs">
-                        {(customerData.network.dia?.length || 0) + (customerData.network.mpls?.length || 0)} Services
+                        {(customerData.network.expressConnect?.length || 0) + (customerData.network.siteConnect?.length || 0)} Services
                       </Badge>
                     </div>
                   </button>
@@ -379,13 +379,13 @@ export function InventoryPage() {
 
                 {/* Network Services */}
                 {selectedDomain === 'network' && (
-                  <Tabs defaultValue="dia" className="mt-6">
+                  <Tabs defaultValue="expressConnect" className="mt-6">
                     <TabsList className="grid w-full max-w-md grid-cols-2">
-                      <TabsTrigger value="dia">DIA</TabsTrigger>
-                      <TabsTrigger value="mpls">MPLS</TabsTrigger>
+                      <TabsTrigger value="expressConnect">Express Connect</TabsTrigger>
+                      <TabsTrigger value="siteConnect">Site Connect</TabsTrigger>
                     </TabsList>
 
-                    <TabsContent value="dia" className="mt-4">
+                    <TabsContent value="expressConnect" className="mt-4">
                       <div className="border rounded-lg overflow-hidden">
                         <Table>
                           <TableHeader>
@@ -400,7 +400,7 @@ export function InventoryPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {customerData.network.dia?.map((link) => (
+                            {customerData.network.expressConnect?.map((link) => (
                               <TableRow key={link.linkId}>
                                 <TableCell className="font-medium">{link.linkId}</TableCell>
                                 <TableCell>
@@ -428,7 +428,7 @@ export function InventoryPage() {
                       </div>
                     </TabsContent>
 
-                    <TabsContent value="mpls" className="mt-4">
+                    <TabsContent value="siteConnect" className="mt-4">
                       <div className="border rounded-lg overflow-hidden">
                         <Table>
                           <TableHeader>
@@ -443,7 +443,7 @@ export function InventoryPage() {
                             </TableRow>
                           </TableHeader>
                           <TableBody>
-                            {customerData.network.mpls?.map((link) => (
+                            {customerData.network.siteConnect?.map((link) => (
                               <TableRow key={link.linkId}>
                                 <TableCell className="font-medium">{link.linkId}</TableCell>
                                 <TableCell>

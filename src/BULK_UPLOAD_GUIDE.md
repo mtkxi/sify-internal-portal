@@ -1,4 +1,4 @@
-# Bulk Upload Guide - New DIA Service Request
+# Bulk Upload Guide - New Express Connect Service Request
 
 ## Overview
 The bulk upload feature allows you to configure multiple services at once by uploading a CSV/Excel file instead of manually entering each service.

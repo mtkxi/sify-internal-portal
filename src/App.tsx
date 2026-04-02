@@ -268,8 +268,8 @@ export default function App() {
               <Route path="/new-project" element={<NewProject />} />
               <Route path="/new-project/step2" element={<ProjectStep2 />} />
               <Route path="/new-project/step3" element={<ProjectStep3 />} />
-              <Route path="/new-dia-request" element={<NewDIAServiceRequest />} />
-              <Route path="/new-dia-service" element={<NewDIAServiceRequest />} />
+              <Route path="/new-express-connect-request" element={<NewDIAServiceRequest />} />
+              <Route path="/new-express-connect-service" element={<NewDIAServiceRequest />} />
               <Route path="/project/:projectId" element={<ProjectDetailView />} />
               <Route path="/requirement-details/:id" element={<RequirementDetailsView />} />
               <Route path="/feasibility-pool/:id" element={<FeasibilityPool />} />

@@ -428,7 +428,7 @@ export function AddFIDsFromPool() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate('/new-dia-service', {
+                onClick={() => navigate('/new-express-connect-service', {
                   state: { company, returnTo: `/add-fids/${id}` }
                 })}
               >

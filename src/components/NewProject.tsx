@@ -32,6 +32,7 @@ interface NewProjectData {
   // Project Information & Scope
   projectName: string;
   location: string;
+  datacenter: string;
   contractTerm: string;
   priority: string;
   timeline: string;
@@ -80,7 +81,7 @@ const bdManagers = {
   network: [
     { id: 'bd_net_1', name: 'Suresh Reddy', email: 'suresh.reddy@onesify.com', expertise: 'Network Architecture' },
     { id: 'bd_net_2', name: 'Kavitha Singh', email: 'kavitha.singh@onesify.com', expertise: 'Connectivity Solutions' },
-    { id: 'bd_net_3', name: 'Arjun Mehta', email: 'arjun.mehta@onesify.com', expertise: 'SD-WAN & MPLS' }
+    { id: 'bd_net_3', name: 'Arjun Mehta', email: 'arjun.mehta@onesify.com', expertise: 'SD-WAN & Site Connect' }
   ],
   managedServices: [
     { id: 'bd_ms_1', name: 'Deepak Gupta', email: 'deepak.gupta@onesify.com', expertise: 'Cloud Migration' },
@@ -203,6 +204,7 @@ export function NewProject() {
   const [formData, setFormData] = useState<NewProjectData>({
     projectName: '',
     location: '',
+    datacenter: '',
     contractTerm: '',
     priority: '',
     timeline: '',
@@ -600,7 +602,7 @@ export function NewProject() {
                       <Label htmlFor="city">City *</Label>
                       <Select 
                         value={formData.city} 
-                        onValueChange={(value) => handleInputChange('city', value)}
+                        onValueChange={(value: string) => handleInputChange('city', value)}
                         disabled={!formData.state}
                       >
                         <SelectTrigger className="disabled:opacity-50">
@@ -755,7 +757,7 @@ export function NewProject() {
                     <Label htmlFor="location">Location *</Label>
                     <Select
                       value={formData.location || ''}
-                      onValueChange={(value) => {
+                      onValueChange={(value: string) => {
                         handleInputChange('location', value);
                         if (formData.datacenter) {
                           handleInputChange('datacenter', ''); // Reset DC when city changes
@@ -784,7 +786,7 @@ export function NewProject() {
                       <Server className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
                       <Select
                         value={formData.datacenter || ''}
-                        onValueChange={(value) => handleInputChange('datacenter', value)}
+                        onValueChange={(value: string) => handleInputChange('datacenter', value)}
                         disabled={!formData.location}
                       >
                         <SelectTrigger className="pl-10">
@@ -854,7 +856,7 @@ export function NewProject() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="priority">Priority *</Label>
-                    <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
+                    <Select value={formData.priority} onValueChange={(value: string) => handleInputChange('priority', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
@@ -868,7 +870,7 @@ export function NewProject() {
 
                   <div className="space-y-2">
                     <Label htmlFor="contractTerm">Contract Term</Label>
-                    <Select value={formData.contractTerm} onValueChange={(value) => handleInputChange('contractTerm', value)}>
+                    <Select value={formData.contractTerm} onValueChange={(value: string) => handleInputChange('contractTerm', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select term" />
                       </SelectTrigger>
@@ -901,7 +903,7 @@ export function NewProject() {
                     <Label htmlFor="budgetRange">Budget Range</Label>
                     <div className="relative">
                       <IndianRupee className="absolute left-3 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                      <Select value={formData.budgetRange} onValueChange={(value) => handleInputChange('budgetRange', value)}>
+                      <Select value={formData.budgetRange} onValueChange={(value: string) => handleInputChange('budgetRange', value)}>
                         <SelectTrigger className="pl-10">
                           <SelectValue placeholder="Select budget range" />
                         </SelectTrigger>
@@ -916,7 +918,7 @@ export function NewProject() {
 
                   <div className="space-y-2">
                     <Label htmlFor="billingPreference">Billing Preference</Label>
-                    <Select value={formData.billingPreference} onValueChange={(value) => handleInputChange('billingPreference', value)}>
+                    <Select value={formData.billingPreference} onValueChange={(value: string) => handleInputChange('billingPreference', value)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select billing frequency" />
                       </SelectTrigger>
@@ -1055,7 +1057,7 @@ export function NewProject() {
 
               <div className="space-y-2">
                 <Label htmlFor="currentHostingModel">Current Hosting Model</Label>
-                <Select value={formData.currentHostingModel} onValueChange={(value) => handleInputChange('currentHostingModel', value)}>
+                <Select value={formData.currentHostingModel} onValueChange={(value: string) => handleInputChange('currentHostingModel', value)}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select hosting model" />
                   </SelectTrigger>

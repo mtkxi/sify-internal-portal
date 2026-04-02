@@ -12,7 +12,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Input } from './ui/input';
 import { ArrowLeft, FileText, Check, DollarSign, Pencil, Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface VASItem {
   category: 'Additional IP' | 'Managed Services' | 'Devices' | 'DDOS';
@@ -140,13 +140,13 @@ export function ConfigureProposal() {
   const location = useLocation();
   
   // Extract product lock information from navigation state
-  const lockedProduct = location.state?.lockedProduct || null; // 'DIA' or 'MPLS' or null
+  const lockedProduct = location.state?.lockedProduct || null; // 'Express Connect' or 'Site Connect' or null
   const isServiceChanges = location.state?.isServiceChanges || false;
   
   const [selectedFIDs, setSelectedFIDs] = useState<string[]>([]);
-  // If product is locked, use the locked product; otherwise default to "DIA"
-  const [networkType, setNetworkType] = useState<"DIA" | "MPLS">(
-    lockedProduct === 'MPLS' ? 'MPLS' : 'DIA'
+  // If product is locked, use the locked product; otherwise default to "Express Connect"
+  const [networkType, setNetworkType] = useState<"Express Connect" | "Site Connect">(
+    lockedProduct === 'Site Connect' ? 'Site Connect' : 'Express Connect'
   );
   const [mplsType, setMplsType] = useState<"Mesh" | "Hub & Spoke">("Mesh");
   const [configurations, setConfigurations] = useState<FIDConfiguration[]>(mockFIDConfigurations);
@@ -341,7 +341,7 @@ export function ConfigureProposal() {
               <div className="col-span-2">
                 <label className="text-xs text-gray-500">Requirement</label>
                 <p className="text-sm text-gray-900 mt-1">
-                  DIA connectivity requirement for Mumbai office with 100 Mbps bandwidth
+                  Express Connect connectivity requirement for Mumbai office with 100 Mbps bandwidth
                 </p>
               </div>
             </div>
@@ -377,20 +377,20 @@ export function ConfigureProposal() {
                 </label>
                 <Select 
                   value={networkType} 
-                  onValueChange={(value: "DIA" | "MPLS") => setNetworkType(value)}
+                  onValueChange={(value: "Express Connect" | "Site Connect") => setNetworkType(value)}
                   disabled={lockedProduct !== null && isServiceChanges}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="DIA">DIA</SelectItem>
-                    <SelectItem value="MPLS">MPLS</SelectItem>
+                    <SelectItem value="Express Connect">Express Connect</SelectItem>
+                    <SelectItem value="Site Connect">Site Connect</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              {networkType === "MPLS" && (
+              {networkType === "Site Connect" && (
                 <div>
                   <label className="text-sm text-gray-700 mb-2 block">MPLS Type</label>
                   <Select value={mplsType} onValueChange={(value: "Mesh" | "Hub & Spoke") => setMplsType(value)}>
@@ -472,7 +472,7 @@ export function ConfigureProposal() {
                     <TableHead className="w-12">
                       <Checkbox
                         checked={selectedFIDs.length === configurations.length}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={(checked: boolean) => {
                           if (checked) {
                             setSelectedFIDs(configurations.map(c => c.fid));
                           } else {
@@ -489,7 +489,7 @@ export function ConfigureProposal() {
                     <TableHead>
                       <div className="flex items-center gap-1.5">
                         Link Type
-                        {networkType === "MPLS" && mplsType === "Hub & Spoke" && (
+                        {networkType === "Site Connect" && mplsType === "Hub & Spoke" && (
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger>
@@ -506,7 +506,7 @@ export function ConfigureProposal() {
                       </div>
                     </TableHead>
                     <TableHead>VAS</TableHead>
-                    <TableHead>{networkType === "MPLS" ? "QOS" : "Plan"}</TableHead>
+                    <TableHead>{networkType === "Site Connect" ? "QOS" : "Plan"}</TableHead>
                     <TableHead>OTC</TableHead>
                     <TableHead>ARC</TableHead>
                     <TableHead className="w-12">Status</TableHead>
@@ -518,7 +518,7 @@ export function ConfigureProposal() {
                       <TableCell>
                         <Checkbox
                           checked={selectedFIDs.includes(config.fid)}
-                          onCheckedChange={(checked) => {
+                          onCheckedChange={(checked: boolean) => {
                             if (checked) {
                               setSelectedFIDs([...selectedFIDs, config.fid]);
                             } else {
@@ -538,7 +538,7 @@ export function ConfigureProposal() {
                       <TableCell>
                         <Select 
                           value={config.bandwidth} 
-                          onValueChange={(value) => handleBandwidthChange(config.fid, value)}
+                          onValueChange={(value: string) => handleBandwidthChange(config.fid, value)}
                         >
                           <SelectTrigger className="w-[120px]">
                             <SelectValue />
@@ -553,9 +553,9 @@ export function ConfigureProposal() {
                       <TableCell>
                         <Select 
                           value={config.linkType} 
-                          onValueChange={(value) => {
+                          onValueChange={(value: string) => {
                             // Validate bandwidth requirement for Hub & Spoke MPLS
-                            if (networkType === "MPLS" && mplsType === "Hub & Spoke" && value === "Hub") {
+                            if (networkType === "Site Connect" && mplsType === "Hub & Spoke" && value === "Hub") {
                               const currentBandwidth = getBandwidthValue(config.bandwidth);
                               const maxBandwidthOfOthers = Math.max(
                                 ...configurations
@@ -586,7 +586,7 @@ export function ConfigureProposal() {
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            {networkType === "MPLS" && mplsType === "Hub & Spoke" ? (
+                            {networkType === "Site Connect" && mplsType === "Hub & Spoke" ? (
                               <>
                                 <SelectItem value="Hub">Hub</SelectItem>
                                 <SelectItem value="Spoke">Spoke</SelectItem>
@@ -650,13 +650,13 @@ export function ConfigureProposal() {
                       <TableCell>
                         <Select 
                           value={config.plan} 
-                          onValueChange={(value) => handlePlanChange(config.fid, value)}
+                          onValueChange={(value: string) => handlePlanChange(config.fid, value)}
                         >
                           <SelectTrigger className="w-[120px]">
-                            <SelectValue placeholder={`Select ${networkType === "MPLS" ? "QOS" : "plan"}`} />
+                            <SelectValue placeholder={`Select ${networkType === "Site Connect" ? "QOS" : "plan"}`} />
                           </SelectTrigger>
                           <SelectContent>
-                            {networkType === "MPLS" ? (
+                            {networkType === "Site Connect" ? (
                               <>
                                 <SelectItem value="Bronze">Bronze</SelectItem>
                                 <SelectItem value="Silver">Silver</SelectItem>
@@ -702,7 +702,7 @@ export function ConfigureProposal() {
             <div className="space-y-6 py-6">
               <div>
                 <label className="text-sm text-gray-700 mb-2 block">Link Type (Required) *</label>
-                <Select value={bulkConfig.linkType} onValueChange={(value) => setBulkConfig({...bulkConfig, linkType: value})}>
+                <Select value={bulkConfig.linkType} onValueChange={(value: string) => setBulkConfig({...bulkConfig, linkType: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select link type" />
                   </SelectTrigger>
@@ -844,7 +844,7 @@ function VASConfigDialog({
                 {selectedCategory === "DDOS" && "Mitigation Capacity"}
                 {" *"}
               </label>
-              <Select value={selectedValue} onValueChange={(value) => {
+              <Select value={selectedValue} onValueChange={(value: string) => {
                 setSelectedValue(value);
                 // Auto-fill description for Managed Services
                 if (selectedCategory === "Managed Services") {
@@ -962,7 +962,7 @@ function BulkVASConfiguration({
             {selectedCategory === "DDOS" && "Mitigation Capacity"}
             {" *"}
           </label>
-          <Select value={selectedValue} onValueChange={(value) => {
+          <Select value={selectedValue} onValueChange={(value: string) => {
             setSelectedValue(value);
             // Auto-fill description for Managed Services
             if (selectedCategory === "Managed Services") {

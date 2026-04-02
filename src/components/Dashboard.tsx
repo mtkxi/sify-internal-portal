@@ -1208,7 +1208,7 @@ export function Dashboard() {
                   setShowProductTypeModal(false);
                   // Navigate to network services creation
                   if (modalContext === 'request') {
-                    navigate('/new-dia-request');
+                    navigate('/new-express-connect-request');
                   } else {
                     navigate('/new-project');
                   }

@@ -175,7 +175,7 @@ export function FIDPricingManagement() {
 
   // Get networkProduct from location state to determine network type
   const { networkProduct, networkType: receivedNetworkType, fidConfigurations } = location.state || {};
-  const networkType = receivedNetworkType || (networkProduct?.includes('MPLS') ? 'MPLS' : 'DIA');
+  const networkType = receivedNetworkType || (networkProduct?.includes('Site Connect') ? 'Site Connect' : 'Express Connect');
 
   // Margin threshold configuration
   const MARGIN_THRESHOLD = {

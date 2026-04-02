@@ -76,7 +76,7 @@ export function PODetails() {
                   </div>
                   <div>
                     <Label className="text-gray-600 text-sm">Product Type</Label>
-                    <p className="text-gray-900 mt-1">DIA (Dedicated Internet Access)</p>
+                    <p className="text-gray-900 mt-1">Express Connect (Dedicated Internet Access)</p>
                   </div>
                   <div>
                     <Label className="text-gray-600 text-sm">Total FIDs</Label>
