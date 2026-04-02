@@ -22,6 +22,7 @@ import { Checkbox } from './ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { toast } from 'sonner';
+import { LM_TYPES, type LMType } from '../constants/lastMileTypes';
 import {
   ArrowLeft,
   ArrowRight,
@@ -55,12 +56,142 @@ import { DEVICE_MODEL_OPTIONS } from '../constants/deviceModels';
 import { getSampleConnectionData, getSampleMDACServices } from '../utils/sampleData';
 import { OpportunitySearch } from './ServiceRequest/OpportunitySearch';
 
+// Business Rules: LM Type availability based on Building Type and Link Type
+// All LM Types for reference
+const ALL_LM_TYPES = [
+  LM_TYPES.SIFY_FIBER,
+  LM_TYPES.SIFY_WIRELESS,
+  LM_TYPES.LEASED_LINE_FIBER,
+  LM_TYPES.LEASED_LINE_WIRELESS,
+  LM_TYPES.BROADBAND,
+  LM_TYPES.THREE_G_FOUR_G,
+  LM_TYPES.VSAT
+] as LMType[];
+
+const LM_TYPE_RULES = {
+  'Sify DC': {
+    'Single': [LM_TYPES.SIFY_FIBER] as LMType[],
+    'Dual': [LM_TYPES.SIFY_FIBER, LM_TYPES.LEASED_LINE_FIBER] as LMType[]
+  },
+  'Connected DC': {
+    'Single': [LM_TYPES.SIFY_FIBER] as LMType[],
+    'Dual': [LM_TYPES.SIFY_FIBER, LM_TYPES.LEASED_LINE_FIBER] as LMType[]
+  },
+  'Connected Building': {
+    'Single': [LM_TYPES.SIFY_FIBER, LM_TYPES.SIFY_WIRELESS] as LMType[],
+    'Dual': ALL_LM_TYPES
+  },
+  'Custom Location': {
+    'Single': ALL_LM_TYPES,
+    'Dual': ALL_LM_TYPES
+  }
+} as const;
+
+// Helper function to normalize link type for business rules
+const normalizeLinkType = (linkType: string): 'Single' | 'Dual' => {
+  if (linkType === 'Single') {
+    return 'Single';
+  }
+  // All dual configurations are treated as 'Dual'
+  if (linkType.startsWith('Dual')) {
+    return 'Dual';
+  }
+  // Default fallback
+  return 'Single';
+};
+
+// Helper function to get available LM types based on building type and link configuration
+const getAvailableLMTypesForBuilding = (buildingType: string, linkType: string): LMType[] => {
+  const buildingRules = LM_TYPE_RULES[buildingType as keyof typeof LM_TYPE_RULES];
+  if (!buildingRules) {
+    return ALL_LM_TYPES; // Fallback to all types
+  }
+  
+  const normalizedLinkType = normalizeLinkType(linkType);
+  const linkRules = buildingRules[normalizedLinkType];
+  return linkRules || ALL_LM_TYPES; // Fallback to all types
+};
+
+// Helper function to check bandwidth restrictions
+const isBandwidthCompatible = (lmType: LMType, bandwidthMbps: number): boolean => {
+  // Bandwidth restrictions for specific LM types
+  if (lmType === LM_TYPES.BROADBAND && bandwidthMbps > 100) {
+    return false; // Broadband limited to 100 Mbps
+  }
+  if (lmType === LM_TYPES.THREE_G_FOUR_G && bandwidthMbps > 50) {
+    return false; // 3G/4G limited to 50 Mbps
+  }
+  return true;
+};
+
+// Legacy compatibility: Convert old LM type names to new constants
+const convertLegacyLMType = (oldType: string): LMType => {
+  const legacyMapping: { [key: string]: LMType } = {
+    'Fiber': LM_TYPES.SIFY_FIBER,
+    'Wireless': LM_TYPES.SIFY_WIRELESS,
+    'Leased Line - Fiber': LM_TYPES.LEASED_LINE_FIBER,
+    'Leased Line - Wireless': LM_TYPES.LEASED_LINE_WIRELESS,
+    'Broadband': LM_TYPES.BROADBAND,
+    '3G/4G': LM_TYPES.THREE_G_FOUR_G,
+    'VSAT': LM_TYPES.VSAT
+  };
+  return legacyMapping[oldType] || oldType as LMType;
+};
+
+// Convert new LM type to display name (for UI)
+const getLMTypeDisplayName = (lmType: LMType): string => {
+  return lmType; // New LM types are already user-friendly
+};
+
+// Convert new LMType to legacy ConnectionType format for LMTypeSelector component
+const convertLMTypeToLegacy = (lmType: LMType): any => {
+  const legacyMapping: { [key in LMType]: string } = {
+    [LM_TYPES.SIFY_FIBER]: 'Fiber',
+    [LM_TYPES.SIFY_WIRELESS]: 'Wireless', 
+    [LM_TYPES.LEASED_LINE_FIBER]: 'Leased Line Fiber',
+    [LM_TYPES.LEASED_LINE_WIRELESS]: 'Leased Line Wireless',
+    [LM_TYPES.BROADBAND]: 'Broadband (With/Without Static IP)',
+    [LM_TYPES.THREE_G_FOUR_G]: '4G/5G (Single/Dual Sim)', 
+    [LM_TYPES.VSAT]: 'VSAT'
+  };
+  return legacyMapping[lmType] || lmType;
+};
+
+// Convert legacy ConnectionType back to new LMType
+const convertLegacyToLMType = (legacyType: string): LMType => {
+  const reverseMapping: { [key: string]: LMType } = {
+    'Fiber': LM_TYPES.SIFY_FIBER,
+    'Wireless': LM_TYPES.SIFY_WIRELESS,
+    'Leased Line Fiber': LM_TYPES.LEASED_LINE_FIBER,
+    'Leased Line Wireless': LM_TYPES.LEASED_LINE_WIRELESS,
+    'Broadband (With/Without Static IP)': LM_TYPES.BROADBAND,
+    '4G/5G (Single/Dual Sim)': LM_TYPES.THREE_G_FOUR_G,
+    'VSAT': LM_TYPES.VSAT
+  };
+  return reverseMapping[legacyType] || legacyType as LMType;
+};
+
+// Convert ConnectionTypeItem array to legacy format for LMTypeSelector
+const convertConnectionTypesToLegacy = (connectionTypes: ConnectionTypeItem[]): any[] => {
+  return connectionTypes.map(ct => ({
+    ...ct,
+    type: convertLMTypeToLegacy(ct.type)
+  }));
+};
+
+// Convert legacy format back to ConnectionTypeItem array
+const convertLegacyToConnectionTypes = (legacyTypes: any[]): ConnectionTypeItem[] => {
+  return legacyTypes.map(lt => ({
+    ...lt,
+    type: convertLegacyToLMType(lt.type)
+  }));
+};
+
 interface ConnectionTypeItem {
-  type: 'Fiber' | 'Wireless' | 'Broadband' | 'Leased Line - Fiber' | 'Leased Line - Wireless' | 'BSO - Fiber' | 'BSO - Wireless' | '3G/4G' | 'VSAT' | 'Leased Line';
+  type: LMType;
   isPrimary: boolean;
-  serviceProviders?: string[]; // List of providers (included or excluded based on providerPreference)
-  primaryProvider?: string; // Primary provider within Leased Line
-  providerPreference?: 'include' | 'exclude' | 'no-preference'; // How to interpret serviceProviders list
+  serviceProviders?: string[]; // List of included providers (simplified to include-only)
+  primaryProvider?: string; // Primary provider for Leased Line types
   broadbandIPType?: 'With Static IP' | 'Without Static IP'; // For Broadband
   sim3G4GType?: 'Single Sim' | 'Dual Sim'; // For 3G/4G
 }
@@ -569,7 +700,7 @@ export function NewDIAServiceRequest() {
     const linkModTypes = getLinkModificationTypes(currentModifyLink.id);
     let lmTypeToSave = modifyConnectionTypes;
 
-    // Check if we need to auto-populate Fiber (for both LM modification and Add secondary/tertiary)
+    // Check if we need to auto-populate Sify Fiber (for both LM modification and Add secondary/tertiary)
     if ((linkModTypes.lm || linkModTypes.addSecondaryTertiary) && (!lmTypeToSave || lmTypeToSave.length === 0)) {
       // Check if this is a fiber-only building type
       const isFiberOnly = currentModifyLink.addressType === 'Sify DC' ||
@@ -584,7 +715,7 @@ export function NewDIAServiceRequest() {
       );
 
       if (isFiberOnly || isChangingToDC) {
-        lmTypeToSave = [{ type: 'Fiber', isPrimary: true }];
+        lmTypeToSave = [{ type: LM_TYPES.SIFY_FIBER, isPrimary: true }];
       }
     }
 
@@ -741,14 +872,14 @@ export function NewDIAServiceRequest() {
   const hasMixedLMTypes = (): boolean => {
     const hasFiber = connections.some(conn =>
       conn.connectionTypes?.some(ct =>
-        ct.type === 'Fiber' ||
-        ct.type === 'Leased Line - Fiber'
+        ct.type === LM_TYPES.SIFY_FIBER ||
+        ct.type === LM_TYPES.LEASED_LINE_FIBER
       )
     );
     const hasWireless = connections.some(conn =>
       conn.connectionTypes?.some(ct =>
-        ct.type === 'Wireless' ||
-        ct.type === 'Leased Line - Wireless'
+        ct.type === LM_TYPES.SIFY_WIRELESS ||
+        ct.type === LM_TYPES.LEASED_LINE_WIRELESS
       )
     );
     return hasFiber && hasWireless;
@@ -758,14 +889,14 @@ export function NewDIAServiceRequest() {
   const hasOnlyFiber = (): boolean => {
     const hasFiber = connections.some(conn =>
       conn.connectionTypes?.some(ct =>
-        ct.type === 'Fiber' ||
-        ct.type === 'Leased Line - Fiber'
+        ct.type === LM_TYPES.SIFY_FIBER ||
+        ct.type === LM_TYPES.LEASED_LINE_FIBER
       )
     );
     const hasWireless = connections.some(conn =>
       conn.connectionTypes?.some(ct =>
-        ct.type === 'Wireless' ||
-        ct.type === 'Leased Line - Wireless'
+        ct.type === LM_TYPES.SIFY_WIRELESS ||
+        ct.type === LM_TYPES.LEASED_LINE_WIRELESS
       )
     );
     return hasFiber && !hasWireless;
@@ -775,14 +906,14 @@ export function NewDIAServiceRequest() {
   const hasOnlyWireless = (): boolean => {
     const hasFiber = connections.some(conn =>
       conn.connectionTypes?.some(ct =>
-        ct.type === 'Fiber' ||
-        ct.type === 'Leased Line - Fiber'
+        ct.type === LM_TYPES.SIFY_FIBER ||
+        ct.type === LM_TYPES.LEASED_LINE_FIBER
       )
     );
     const hasWireless = connections.some(conn =>
       conn.connectionTypes?.some(ct =>
-        ct.type === 'Wireless' ||
-        ct.type === 'Leased Line - Wireless'
+        ct.type === LM_TYPES.SIFY_WIRELESS ||
+        ct.type === LM_TYPES.LEASED_LINE_WIRELESS
       )
     );
     return hasWireless && !hasFiber;
@@ -2200,28 +2331,32 @@ export function NewDIAServiceRequest() {
     return newVal > current ? 'upgrade' : 'downgrade';
   };
 
-  const getAvailableLMTypes = (link: any, newBandwidth?: string): string[] => {
+  const getAvailableLMTypes = (link: any, newBandwidth?: string): LMType[] => {
     const bandwidth = newBandwidth || link.bandwidth;
-    const addressType = link.addressType;
+    const buildingType = link.addressType || 'Custom Location'; // Default to Custom Location if not specified
+    const linkType = link.numberOfLinks || 'Single'; // Default to Single if not specified
 
-    // Extract numeric value from bandwidth string (e.g., "100 Mbps" -> 100)
-    const bwValue = parseInt(bandwidth.match(/(\d+)/)?.[1] || '0');
+    // Get base LM types from business rules
+    const baseLMTypes = getAvailableLMTypesForBuilding(buildingType, linkType);
 
-    // If bandwidth > 100 Mbps, only Fiber is allowed
-    if (bwValue > 100) {
-      return ['Fiber'];
+    // Apply bandwidth restrictions if bandwidth is specified
+    if (bandwidth) {
+      // Extract numeric value from bandwidth string (e.g., "100 Mbps" -> 100) 
+      const bwMatch = bandwidth.match(/(\d+(?:\.\d+)?)\s*(Mbps|Gbps)/i);
+      if (bwMatch) {
+        const value = parseFloat(bwMatch[1]);
+        const unit = bwMatch[2].toLowerCase();
+        const bandwidthMbps = unit === 'gbps' ? value * 1000 : value;
+        
+        // Filter out LM types that don't support this bandwidth
+        return baseLMTypes.filter(lmType => isBandwidthCompatible(lmType, bandwidthMbps));
+      }
     }
 
-    // If address type is DC or Connected Building, only Fiber is allowed
-    if (addressType === 'Sify DC' || addressType === 'Connected DC' || addressType === 'Connected Building') {
-      return ['Fiber'];
-    }
-
-    // Otherwise, all LM types are available
-    return ['Fiber', 'Wireless', 'Broadband', 'BSO', '3G/4G'];
+    return baseLMTypes;
   };
 
-  const isLMTypeValid = (link: any, newLMType: string, newBandwidth?: string): boolean => {
+  const isLMTypeValid = (link: any, newLMType: LMType, newBandwidth?: string): boolean => {
     const availableTypes = getAvailableLMTypes(link, newBandwidth);
     return availableTypes.includes(newLMType);
   };
@@ -2350,12 +2485,12 @@ export function NewDIAServiceRequest() {
           const connType = connectionTypeStr.toLowerCase();
           if (connType === 'wireless') {
             connectionTypes.push({
-              type: 'Wireless',
+              type: LM_TYPES.SIFY_WIRELESS,
               isPrimary: true
             });
           } else if (connType === 'fiber') {
             connectionTypes.push({
-              type: 'Fiber',
+              type: LM_TYPES.SIFY_FIBER,
               isPrimary: true
             });
           }
@@ -2363,7 +2498,7 @@ export function NewDIAServiceRequest() {
           // Add service provider if provided
           if (serviceProvider && ['airtel', 'tcl', 'vodafone', 'bsnl'].includes(serviceProvider.toLowerCase())) {
             connectionTypes.push({
-              type: 'Leased Line',
+              type: LM_TYPES.LEASED_LINE_FIBER, // Updated from legacy 'Leased Line'
               isPrimary: false,
               serviceProviders: [serviceProvider],
               primaryProvider: serviceProvider
@@ -2419,9 +2554,14 @@ export function NewDIAServiceRequest() {
     invalidEntries.forEach(conn => {
       const errors = validationErrors.get(conn.id) || [];
 
-      // Format connection type
-      const primaryConn = conn.connectionTypes.find(ct => ct.type === 'Wireless' || ct.type === 'Fiber');
-      const ispConn = conn.connectionTypes.find(ct => ct.type === 'Leased Line');
+      // Format connection type - handle both old and new LM type formats
+      const primaryConn = conn.connectionTypes.find(ct => 
+        [LM_TYPES.SIFY_WIRELESS, LM_TYPES.SIFY_FIBER, LM_TYPES.LEASED_LINE_WIRELESS, LM_TYPES.LEASED_LINE_FIBER, LM_TYPES.BROADBAND, LM_TYPES.THREE_G_FOUR_G, LM_TYPES.VSAT].includes(ct.type)
+      );
+      const ispConn = conn.connectionTypes.find(ct => 
+        ct.type === LM_TYPES.LEASED_LINE_FIBER ||
+        ct.type === LM_TYPES.LEASED_LINE_WIRELESS
+      );
       const connectionTypeStr = primaryConn?.type || '';
       const serviceProviderStr = ispConn?.primaryProvider || '';
 
@@ -4038,7 +4178,7 @@ export function NewDIAServiceRequest() {
                                   {conn.connectionTypes && conn.connectionTypes.length > 0 ? (
                                     <div className="space-y-1">
                                       {conn.connectionTypes.map((ct, idx) => {
-                                        if (ct.type === 'Leased Line' && ct.primaryProvider) {
+                                        if (ct.type === LM_TYPES.LEASED_LINE_FIBER || ct.type === LM_TYPES.LEASED_LINE_WIRELESS) {
                                           return (
                                             <div key={idx} className="text-xs">
                                               <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
@@ -4050,8 +4190,8 @@ export function NewDIAServiceRequest() {
                                         return (
                                           <div key={idx} className="text-xs">
                                             <Badge variant="outline" className={
-                                              ct.type === 'Fiber' ? 'bg-blue-50 text-blue-700 border-blue-200' :
-                                                ct.type === 'Wireless' ? 'bg-green-50 text-green-700 border-green-200' :
+                                              ct.type === LM_TYPES.SIFY_FIBER ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                                ct.type === LM_TYPES.SIFY_WIRELESS ? 'bg-green-50 text-green-700 border-green-200' :
                                                   'bg-gray-50 text-gray-700 border-gray-200'
                                             }>
                                               {ct.type}
@@ -4225,7 +4365,7 @@ export function NewDIAServiceRequest() {
                                   const isFiberOnly = link.addressType === 'Sify DC' || link.addressType === 'Connected DC' || link.addressType === 'Connected Building';
 
                                   if (linkModTypes?.lm && isFiberOnly && savedLMType.length === 0) {
-                                    setModifyConnectionTypes([{ type: 'Fiber', isPrimary: true }]);
+                                    setModifyConnectionTypes([{ type: LM_TYPES.SIFY_FIBER, isPrimary: true }]);
                                   } else {
                                     setModifyConnectionTypes(savedLMType);
                                   }
@@ -4251,7 +4391,7 @@ export function NewDIAServiceRequest() {
                                   const isFiberOnly = link.addressType === 'Sify DC' || link.addressType === 'Connected DC' || link.addressType === 'Connected Building';
 
                                   if (linkModTypes?.lm && isFiberOnly) {
-                                    setModifyConnectionTypes([{ type: 'Fiber', isPrimary: true }]);
+                                    setModifyConnectionTypes([{ type: LM_TYPES.SIFY_FIBER, isPrimary: true }]);
                                   } else {
                                     setModifyConnectionTypes([]);
                                   }
@@ -4458,7 +4598,7 @@ export function NewDIAServiceRequest() {
                                                 currentModifyLink.addressType === 'Connected Building';
 
                                               if (isFiberOnly && modifyConnectionTypes.length === 0) {
-                                                setModifyConnectionTypes([{ type: 'Fiber', isPrimary: true }]);
+                                                setModifyConnectionTypes([{ type: LM_TYPES.SIFY_FIBER, isPrimary: true }]);
                                               }
                                             }
                                           }}
@@ -4570,11 +4710,12 @@ export function NewDIAServiceRequest() {
 
                               {/* LM Type for New Link */}
                               <LMTypeSelector
-                                connectionTypes={modifyConnectionTypes}
-                                onConnectionTypesChange={setModifyConnectionTypes}
+                                connectionTypes={convertConnectionTypesToLegacy(modifyConnectionTypes)}
+                                onConnectionTypesChange={(types: any[]) => setModifyConnectionTypes(convertLegacyToConnectionTypes(types))}
                                 idPrefix="secondary"
                                 showCompletionIndicator={true}
-                                fiberOnly={currentModifyLink.addressType === 'Sify DC' || currentModifyLink.addressType === 'Connected DC' || currentModifyLink.addressType === 'Connected Building'}
+                                buildingType={currentModifyLink.addressType}
+                                linkType={currentModifyLink.numberOfLinks || 'Single'}
                                 disableWireless={(selectedNewBandwidth && parseInt(selectedNewBandwidth) > 50) || false}
                               />
 
@@ -5438,16 +5579,17 @@ export function NewDIAServiceRequest() {
                               {/* LM Type Modification */}
                               {currentModifyLink && getLinkModificationTypes(currentModifyLink.id).lm && (
                                 <LMTypeSelector
-                                  connectionTypes={modifyConnectionTypes}
-                                  onConnectionTypesChange={setModifyConnectionTypes}
+                                  connectionTypes={convertConnectionTypesToLegacy(modifyConnectionTypes)}
+                                  onConnectionTypesChange={(types: any[]) => setModifyConnectionTypes(convertLegacyToConnectionTypes(types))}
                                   idPrefix="modify"
                                   showCompletionIndicator={true}
-                                  fiberOnly={
+                                  buildingType={
                                     // If address is also being changed, use the new address type; otherwise use current address type
                                     (getLinkModificationTypes(currentModifyLink.id).address && modifyAddressType
-                                      ? (modifyAddressType === 'Sify DC' || modifyAddressType === 'Connected DC' || modifyAddressType === 'Connected Building')
-                                      : (currentModifyLink.addressType === 'Sify DC' || currentModifyLink.addressType === 'Connected DC' || currentModifyLink.addressType === 'Connected Building'))
+                                      ? modifyAddressType
+                                      : currentModifyLink.addressType)
                                   }
+                                  linkType={currentModifyLink.numberOfLinks || 'Single'}
                                   disableWireless={disableWirelessInLM}
                                 />
                               )}
@@ -6378,7 +6520,7 @@ export function NewDIAServiceRequest() {
                                       buildingName: '',
                                       // Reset connection types based on address type
                                       connectionTypes: val === 'Custom Location' ? [] : [{
-                                        type: 'Fiber',
+                                        type: LM_TYPES.SIFY_FIBER,
                                         isPrimary: true
                                       }]
                                     });
@@ -7391,6 +7533,8 @@ export function NewDIAServiceRequest() {
                                 });
                               }}
                               idPrefix="single-link"
+                              buildingType={currentConnection.addressType}
+                              linkType={currentConnection.numberOfLinks || 'Single'}
                               cloudProvider={currentConnection.cloudProvider}
                               dcLocation={
                                 currentConnection.addressType === 'Sify DC' ||
@@ -7753,6 +7897,8 @@ export function NewDIAServiceRequest() {
                                   });
                                 }}
                                 idPrefix="primary-link"
+                                buildingType={currentConnection.addressType}
+                                linkType={currentConnection.numberOfLinks || 'Single'}
                                 cloudProvider={currentConnection.cloudProvider}
                                 dcLocation={
                                   currentConnection.addressType === 'Sify DC' ||
@@ -8107,6 +8253,8 @@ export function NewDIAServiceRequest() {
                                   });
                                 }}
                                 idPrefix="secondary-link"
+                                buildingType={currentConnection.addressType}
+                                linkType={currentConnection.numberOfLinks || 'Single'}
                                 cloudProvider={currentConnection.link2CloudProvider}
                                 dcLocation={
                                   currentConnection.addressType === 'Sify DC' ||
@@ -8373,7 +8521,7 @@ export function NewDIAServiceRequest() {
                           connectionTypes = modifications.newLMType;
                         } else if (isFiberOnly && connectionTypes.length === 0) {
                           // Default to Fiber for DC buildings if not explicitly set
-                          connectionTypes = [{ type: 'Fiber', isPrimary: true }];
+                          connectionTypes = [{ type: LM_TYPES.SIFY_FIBER, isPrimary: true }];
                         }
 
                         // Get bandwidth to display
@@ -8989,7 +9137,7 @@ export function NewDIAServiceRequest() {
                     pinCode: detectedBuilding.pinCode,
                     latitude: detectedBuilding.latitude,
                     longitude: detectedBuilding.longitude,
-                    connectionTypes: [{ type: 'Fiber', isPrimary: true }] // Connected buildings default to Fiber
+                    connectionTypes: [{ type: LM_TYPES.SIFY_FIBER, isPrimary: true }] // Connected buildings default to Sify Fiber
                   });
                   toast.success('Switched to Connected Building', {
                     description: `${detectedBuilding.name} has been set as a Connected Building`
