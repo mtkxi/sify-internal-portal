@@ -612,13 +612,14 @@ export function NewDIAServiceRequest() {
         if (!modifications.newAddressType) return false;
 
         if (modifications.newAddressType === 'Sify DC') {
-          // For Sify DC, we need dcName, state, city, rack, floor, block/tower (mandatory)
-          return !!(modifications.newDCName?.trim() && modifications.newState?.trim() && modifications.newCity?.trim() &&
-            modifications.newRackDetails?.trim() && modifications.newFloorDetails?.trim() && modifications.newBlockTowerDetails?.trim());
+          // For Sify DC, we need dcName, state, city (rack, floor, block/tower are optional)
+          return !!(modifications.newDCName?.trim() && modifications.newState?.trim() && modifications.newCity?.trim());
         } else if (modifications.newAddressType === 'Connected DC') {
-          // For Connected DC, we need connectedDCName, state, city, rack, floor, block/tower (mandatory)
-          return !!(modifications.newConnectedDCName?.trim() && modifications.newState?.trim() && modifications.newCity?.trim() &&
-            modifications.newRackDetails?.trim() && modifications.newFloorDetails?.trim() && modifications.newBlockTowerDetails?.trim());
+          // For Connected DC, we need connectedDCName, state, city (rack, floor, block/tower are optional)
+          return !!(modifications.newConnectedDCName?.trim() && modifications.newState?.trim() && modifications.newCity?.trim());
+        } else if (modifications.newAddressType === 'Connected DC') {
+          // For Connected DC, we need connectedDCName, state, city (rack, floor, block/tower are optional)
+          return !!(modifications.newConnectedDCName?.trim() && modifications.newState?.trim() && modifications.newCity?.trim());
         } else if (modifications.newAddressType === 'Connected Building') {
           // For Connected Building, we need buildingName, state, city (rack, floor, block/tower are optional)
           return !!(modifications.newBuildingName?.trim() && modifications.newState?.trim() && modifications.newCity?.trim());
@@ -1163,14 +1164,19 @@ export function NewDIAServiceRequest() {
     if (!bandwidthValue) return portOptions;
 
     // Extract numeric value from bandwidth
-    const bandwidthMatch = bandwidthValue.match(/(\d+(?:\.\d+)?)\s*(Mbps|Gbps)/i);
+    const bandwidthMatch = bandwidthValue.match(/(\d+(?:\.\d+)?)\s*(Kbps|Mbps|Gbps)/i);
     if (!bandwidthMatch) return portOptions;
 
     const value = parseFloat(bandwidthMatch[1]);
     const unit = bandwidthMatch[2].toLowerCase();
     
     // Convert to Mbps for consistent comparison
-    const bandwidthInMbps = unit === 'gbps' ? value * 1000 : value;
+    let bandwidthInMbps = value;
+    if (unit === 'kbps') {
+      bandwidthInMbps = value / 1000; // Convert Kbps to Mbps
+    } else if (unit === 'gbps') {
+      bandwidthInMbps = value * 1000; // Convert Gbps to Mbps
+    }
 
     // Return only options that are lower than the bandwidth value
     return portOptions.filter(option => option.numericValue < bandwidthInMbps);
@@ -1962,11 +1968,11 @@ export function NewDIAServiceRequest() {
       // For DIA/MPLS with addressType
       if (conn.addressType) {
         if (conn.addressType === 'Sify DC') {
-          // For Sify DC, we need dcName, state, city, rack, floor (block/tower is optional)
-          return conn.dcName && conn.state && conn.city && conn.rackDetails && conn.floorDetails;
+          // For Sify DC, we need dcName, state, city (rack, floor, block/tower are optional)
+          return conn.dcName && conn.state && conn.city;
         } else if (conn.addressType === 'Connected DC') {
-          // For Connected DC, we need connectedDCName, buildingName, state, city, rack, floor (block/tower is optional)
-          return conn.connectedDCName && conn.buildingName && conn.state && conn.city && conn.rackDetails && conn.floorDetails;
+          // For Connected DC, we need connectedDCName, buildingName, state, city (rack, floor, block/tower are optional)
+          return conn.connectedDCName && conn.buildingName && conn.state && conn.city;
         } else if (conn.addressType === 'Connected Building') {
           // For Connected Building, we need buildingName, state, city (rack, floor, block/tower are optional)
           return conn.buildingName && conn.state && conn.city;
@@ -5064,7 +5070,7 @@ export function NewDIAServiceRequest() {
                                       {/* Rack, Floor, Block/Tower Details for Sify DC */}
                                       <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                          <Label className="text-sm text-gray-700">Rack Details *</Label>
+                                          <Label className="text-sm text-gray-700">Rack Details</Label>
                                           <Input
                                             placeholder="e.g., Rack 12"
                                             value={modifyRackDetails}
@@ -5072,7 +5078,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label className="text-sm text-gray-700">Floor Details *</Label>
+                                          <Label className="text-sm text-gray-700">Floor Details</Label>
                                           <Input
                                             placeholder="e.g., Floor 3"
                                             value={modifyFloorDetails}
@@ -5080,7 +5086,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label className="text-sm text-gray-700">Block/Tower Details *</Label>
+                                          <Label className="text-sm text-gray-700">Block/Tower Details</Label>
                                           <Input
                                             placeholder="e.g., Block A"
                                             value={modifyBlockTowerDetails}
@@ -5193,7 +5199,7 @@ export function NewDIAServiceRequest() {
                                       {/* Rack, Floor, Block/Tower Details for Connected DC */}
                                       <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                          <Label className="text-sm text-gray-700">Rack Details *</Label>
+                                          <Label className="text-sm text-gray-700">Rack Details</Label>
                                           <Input
                                             placeholder="e.g., Rack 12"
                                             value={modifyRackDetails}
@@ -5201,7 +5207,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label className="text-sm text-gray-700">Floor Details *</Label>
+                                          <Label className="text-sm text-gray-700">Floor Details</Label>
                                           <Input
                                             placeholder="e.g., Floor 3"
                                             value={modifyFloorDetails}
@@ -5209,7 +5215,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label className="text-sm text-gray-700">Block/Tower Details *</Label>
+                                          <Label className="text-sm text-gray-700">Block/Tower Details</Label>
                                           <Input
                                             placeholder="e.g., Block A"
                                             value={modifyBlockTowerDetails}
@@ -6648,7 +6654,7 @@ export function NewDIAServiceRequest() {
                                       {/* Rack, Floor, Block/Tower Details for Sify DC */}
                                       <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                          <Label>Rack Details *</Label>
+                                          <Label>Rack Details</Label>
                                           <Input
                                             placeholder="e.g., Rack 12"
                                             value={currentConnection.rackDetails || ''}
@@ -6656,7 +6662,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label>Floor Details *</Label>
+                                          <Label>Floor Details</Label>
                                           <Input
                                             placeholder="e.g., Floor 3"
                                             value={currentConnection.floorDetails || ''}
@@ -6664,7 +6670,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label>Block/Tower Details *</Label>
+                                          <Label>Block/Tower Details</Label>
                                           <Input
                                             placeholder="e.g., Block A"
                                             value={currentConnection.blockTowerDetails || ''}
@@ -6769,7 +6775,7 @@ export function NewDIAServiceRequest() {
                                       {/* Rack, Floor, Block/Tower Details for Connected DC */}
                                       <div className="grid grid-cols-3 gap-4">
                                         <div>
-                                          <Label>Rack Details *</Label>
+                                          <Label>Rack Details</Label>
                                           <Input
                                             placeholder="e.g., Rack 12"
                                             value={currentConnection.rackDetails || ''}
@@ -6777,7 +6783,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label>Floor Details *</Label>
+                                          <Label>Floor Details</Label>
                                           <Input
                                             placeholder="e.g., Floor 3"
                                             value={currentConnection.floorDetails || ''}
@@ -6785,7 +6791,7 @@ export function NewDIAServiceRequest() {
                                           />
                                         </div>
                                         <div>
-                                          <Label>Block/Tower Details *</Label>
+                                          <Label>Block/Tower Details</Label>
                                           <Input
                                             placeholder="e.g., Block A"
                                             value={currentConnection.blockTowerDetails || ''}
@@ -7289,7 +7295,8 @@ export function NewDIAServiceRequest() {
                                   })()}
                                   onChange={(e) => {
                                     const value = e.target.value.replace(/[^\d.]/g, '');
-                                    const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                    const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 
+                                                currentConnection.bandwidthValue?.includes('Kbps') ? 'Kbps' : 'Mbps';
                                     setCurrentConnection({
                                       ...currentConnection,
                                       bandwidthValue: value ? `${value} ${unit}` : ''
@@ -7298,8 +7305,9 @@ export function NewDIAServiceRequest() {
                                   className="flex-1"
                                 />
                                 <Select
-                                  value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
-                                  onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                  value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 
+                                        currentConnection.bandwidthValue?.includes('Kbps') ? 'Kbps' : 'Mbps'}
+                                  onValueChange={(unit: 'Kbps' | 'Mbps' | 'Gbps') => {
                                     const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
                                     const numericValue = match ? match[1] : '';
                                     setCurrentConnection({
@@ -7312,6 +7320,7 @@ export function NewDIAServiceRequest() {
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent>
+                                    <SelectItem value="Kbps">Kbps</SelectItem>
                                     <SelectItem value="Mbps">Mbps</SelectItem>
                                     <SelectItem value="Gbps">Gbps</SelectItem>
                                   </SelectContent>
@@ -7353,25 +7362,6 @@ export function NewDIAServiceRequest() {
                             {requirementInfo.product === 'DIA' ? (
                               <div>
                                 <div className="flex items-start gap-6 flex-wrap">
-                                  <div className="max-w-xs">
-                                    <Label htmlFor={`port-classification-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
-                                      Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
-                                    </Label>
-                                    <Select
-                                      value={currentConnection.linkType || ''}
-                                      onValueChange={(val: string) => setCurrentConnection({ ...currentConnection, linkType: val })}
-                                    >
-                                      <SelectTrigger id={`port-classification-${selectedConnectionIndex}`}>
-                                        <SelectValue placeholder="Select" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="Primary">Primary</SelectItem>
-                                        <SelectItem value="Secondary">Secondary</SelectItem>
-                                        <SelectItem value="Tertiary">Tertiary</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-
                                   <div className="max-w-xs">
                                     <Label htmlFor={`handoff-type-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
                                       Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
@@ -7507,25 +7497,6 @@ export function NewDIAServiceRequest() {
                             ) : (
                               <div className="flex items-start gap-6 flex-wrap">
                                 <div className="max-w-xs">
-                                  <Label htmlFor={`port-classification-mpls-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
-                                    Port Classification {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
-                                  </Label>
-                                  <Select
-                                    value={currentConnection.linkType || ''}
-                                    onValueChange={(val) => setCurrentConnection({ ...currentConnection, linkType: val })}
-                                  >
-                                    <SelectTrigger id={`port-classification-mpls-${selectedConnectionIndex}`}>
-                                      <SelectValue placeholder="Select" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Primary">Primary</SelectItem>
-                                      <SelectItem value="Secondary">Secondary</SelectItem>
-                                      <SelectItem value="Tertiary">Tertiary</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-
-                                <div className="max-w-xs">
                                   <Label htmlFor={`handoff-type-mpls-${selectedConnectionIndex}`} className="text-gray-900 mb-2 block">
                                     Hand off Type {requirementInfo.orderType !== 'MDAC' && <span className="text-red-500">*</span>}
                                   </Label>
@@ -7639,7 +7610,8 @@ export function NewDIAServiceRequest() {
                                     })()}
                                     onChange={(e) => {
                                       const value = e.target.value.replace(/[^\d.]/g, '');
-                                      const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                      const unit = currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 
+                                                  currentConnection.bandwidthValue?.includes('Kbps') ? 'Kbps' : 'Mbps';
                                       setCurrentConnection({
                                         ...currentConnection,
                                         bandwidthValue: value ? `${value} ${unit}` : ''
@@ -7648,8 +7620,8 @@ export function NewDIAServiceRequest() {
                                     className="flex-1"
                                   />
                                   <Select
-                                    value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
-                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                    value={currentConnection.bandwidthValue?.includes('Gbps') ? 'Gbps' : currentConnection.bandwidthValue?.includes('Kbps') ? 'Kbps' : 'Mbps'}
+                                    onValueChange={(unit: 'Kbps' | 'Mbps' | 'Gbps') => {
                                       const match = currentConnection.bandwidthValue?.match(/^([\d.]+)/);
                                       const numericValue = match ? match[1] : '';
                                       setCurrentConnection({
@@ -7662,6 +7634,7 @@ export function NewDIAServiceRequest() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="Kbps">Kbps</SelectItem>
                                       <SelectItem value="Mbps">Mbps</SelectItem>
                                       <SelectItem value="Gbps">Gbps</SelectItem>
                                     </SelectContent>
@@ -8001,7 +7974,8 @@ export function NewDIAServiceRequest() {
                                     })()}
                                     onChange={(e) => {
                                       const value = e.target.value.replace(/[^\d.]/g, '');
-                                      const unit = currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps';
+                                      const unit = currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 
+                                                  currentConnection.link2BandwidthValue?.includes('Kbps') ? 'Kbps' : 'Mbps';
                                       setCurrentConnection({
                                         ...currentConnection,
                                         link2BandwidthValue: value ? `${value} ${unit}` : ''
@@ -8010,8 +7984,8 @@ export function NewDIAServiceRequest() {
                                     className="flex-1"
                                   />
                                   <Select
-                                    value={currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : 'Mbps'}
-                                    onValueChange={(unit: 'Mbps' | 'Gbps') => {
+                                    value={currentConnection.link2BandwidthValue?.includes('Gbps') ? 'Gbps' : currentConnection.link2BandwidthValue?.includes('Kbps') ? 'Kbps' : 'Mbps'}
+                                    onValueChange={(unit: 'Kbps' | 'Mbps' | 'Gbps') => {
                                       const match = currentConnection.link2BandwidthValue?.match(/^([\d.]+)/);
                                       const numericValue = match ? match[1] : '';
                                       setCurrentConnection({
@@ -8024,6 +7998,7 @@ export function NewDIAServiceRequest() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      <SelectItem value="Kbps">Kbps</SelectItem>
                                       <SelectItem value="Mbps">Mbps</SelectItem>
                                       <SelectItem value="Gbps">Gbps</SelectItem>
                                     </SelectContent>
