@@ -7149,6 +7149,34 @@ export function NewDIAServiceRequest() {
                             </Select>
                           </div>
 
+                          {/* Common Cloud/Network Provider for Dual link with single cloud */}
+                          {currentConnection.numberOfLinks === 'Dual link with single cloud' && (
+                            <div className="mt-6 max-w-xs">
+                              <Label>Cloud/Network Provider *</Label>
+                              <Select
+                                value={currentConnection.cloudServiceProvider || ''}
+                                onValueChange={(val: string) => setCurrentConnection({
+                                  ...currentConnection,
+                                  cloudServiceProvider: val,
+                                  cloudServiceType: val === 'Sify' ? 'Sify Cloud' : 'Third Party Cloud',
+                                  connectionTypes: [], // Reset primary LM types
+                                  link2ConnectionTypes: [] // Reset secondary LM types
+                                })}
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select provider" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Sify">Sify</SelectItem>
+                                  <SelectItem value="AWS">AWS</SelectItem>
+                                  <SelectItem value="Azure">Azure</SelectItem>
+                                  <SelectItem value="Google Cloud">Google Cloud</SelectItem>
+                                  <SelectItem value="Other">Other</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
                           {/* Cross Connect Responsibility - Moved here */}
                           {requirementInfo.orderType === 'New' && currentConnection.numberOfLinks === 'Single' && currentConnection.addressType &&
                             (currentConnection.addressType !== 'Custom Location' || currentConnection.isDataCenter === true) && (
@@ -7200,7 +7228,7 @@ export function NewDIAServiceRequest() {
                                 )}
                               </div>
                             )}
-                          {/* Cloud/Network Provider for Dual link with single cloud - Removed as each link now has its own */}
+                          {/* Common Cloud/Network Provider now shown above for Dual link with single cloud */}
 
                           <Separator className="mt-6" />
                         </div>
@@ -7556,8 +7584,8 @@ export function NewDIAServiceRequest() {
                               </div>
                             </div>
 
-                            {/* Cloud/Network Provider for Dual links - Primary 1 */}
-                            {(currentConnection.numberOfLinks === 'Dual link with single cloud' || currentConnection.numberOfLinks === 'Dual link with dual cloud') && (
+                            {/* Cloud/Network Provider for Dual links - Primary 1 - Only for dual cloud */}
+                            {currentConnection.numberOfLinks === 'Dual link with dual cloud' && (
                               <div className="mb-6 max-w-xs">
                                 <Label>Cloud/Network Provider *</Label>
                                 <Select
@@ -7916,8 +7944,8 @@ export function NewDIAServiceRequest() {
                               </div>
                             </div>
 
-                            {/* Cloud/Network Provider for Dual links - Secondary 2 */}
-                            {(currentConnection.numberOfLinks === 'Dual link with single cloud' || currentConnection.numberOfLinks === 'Dual link with dual cloud') && (
+                            {/* Cloud/Network Provider for Dual links - Secondary 2 - Only for dual cloud */}
+                            {currentConnection.numberOfLinks === 'Dual link with dual cloud' && (
                               <div className="mb-6 max-w-xs">
                                 <Label>Cloud/Network Provider *</Label>
                                 <Select
