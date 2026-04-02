@@ -7129,9 +7129,18 @@ export function NewDIAServiceRequest() {
                                   setCurrentConnection({
                                     ...currentConnection,
                                     numberOfLinks: val,
+                                    cloudProvider: 'Sify', // Auto-set to Sify for Single
                                     link2BandwidthValue: undefined,
                                     link2ConnectionTypes: undefined,
-                                    link2CloudProvider: undefined
+                                    link2CloudProvider: undefined,
+                                    cloudServiceProvider: undefined
+                                  });
+                                } else if (val === 'Dual link with single cloud') {
+                                  setCurrentConnection({ 
+                                    ...currentConnection, 
+                                    numberOfLinks: val,
+                                    cloudServiceProvider: 'Sify', // Auto-set to Sify for Dual link with single cloud
+                                    cloudServiceType: 'Sify Cloud'
                                   });
                                 } else {
                                   setCurrentConnection({ ...currentConnection, numberOfLinks: val });
@@ -7154,7 +7163,8 @@ export function NewDIAServiceRequest() {
                             <div className="mt-6 max-w-xs">
                               <Label>Cloud/Network Provider *</Label>
                               <Select
-                                value={currentConnection.cloudServiceProvider || ''}
+                                value={'Sify'}
+                                disabled={true}
                                 onValueChange={(val: string) => setCurrentConnection({
                                   ...currentConnection,
                                   cloudServiceProvider: val,
@@ -7163,8 +7173,8 @@ export function NewDIAServiceRequest() {
                                   link2ConnectionTypes: [] // Reset secondary LM types
                                 })}
                               >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select provider" />
+                                <SelectTrigger className="opacity-60 cursor-not-allowed">
+                                  <SelectValue placeholder="Sify" />
                                 </SelectTrigger>
                                 <SelectContent>
                                   <SelectItem value="Sify">Sify</SelectItem>
@@ -7244,15 +7254,16 @@ export function NewDIAServiceRequest() {
                           <div className="max-w-xs">
                             <Label>Cloud/Network Provider *</Label>
                             <Select
-                              value={currentConnection.cloudProvider || ''}
+                              value={'Sify'}
+                              disabled={true}
                               onValueChange={(val: 'Sify' | 'Other ISP') => setCurrentConnection({
                                 ...currentConnection,
                                 cloudProvider: val,
                                 connectionTypes: [] // Reset
                               })}
                             >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select provider" />
+                              <SelectTrigger className="opacity-60 cursor-not-allowed">
+                                <SelectValue placeholder="Sify" />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Sify">Sify</SelectItem>
